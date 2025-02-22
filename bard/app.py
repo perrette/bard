@@ -24,12 +24,21 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
     def callback_process_clipboard(icon, item):
         logger.info('Processing clipboard...')
         text = pyperclip.paste()
-        icon._audioplayer = AudioPlayer.from_files(icon._model.text_to_audio_files(text))
-        logger.info('Done!')
-        icon.update_menu()
+        # clean-up the audio
+        if icon._audioplayer is not None:
+            icon._audioplayer.stop()
+            icon._audioplayer = None
+        try:
+            icon._audioplayer = AudioPlayer.from_files(icon._model.text_to_audio_files(text))
+            logger.info('Done!')
+        finally:
+            icon.update_menu()
         callback_play(icon, item)
 
     def callback_play(icon, item):
+        if icon._audioplayer is None:
+            logger.error('No audio to play')
+            return
         logger.info('Playing...')
         icon._audioplayer.on_done(lambda x: icon.update_menu()).play()
         logger.info('Exiting callback...')
