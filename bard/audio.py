@@ -7,6 +7,22 @@ import numpy as np
 import time
 from bard.util import logger
 
+def read_audio_with_pydub(filename):
+    from pydub import AudioSegment
+    audio = AudioSegment.from_mp3(filename)
+
+    # Convert to numpy float32 array in range [-1, 1]
+    samples = np.array(audio.get_array_of_samples(), dtype=np.float32)
+
+    # Handle stereo by reshaping (pydub uses interleaved samples for stereo)
+    if audio.channels == 2:
+        samples = samples.reshape((-1, 2))
+
+    # Normalize to range [-1, 1] (16-bit PCM)
+    samples /= 2**15
+    return samples, audio.frame_rate
+
+
 class AudioPlayer:
     def __init__(self, data, fs):
         if data.ndim == 1:
@@ -24,7 +40,10 @@ class AudioPlayer:
     @classmethod
     def from_file(cls, filename):
         print("Loading file:", filename)
-        data, fs = sf.read(filename, dtype='float32')  # Load file into memory
+        try:
+            data, fs = sf.read(filename, dtype='float32')  # Load file into memory
+        except sf.LibsndfileError:
+            data, fs = read_audio_with_pydub(filename)
         return cls(data, fs)
 
     def on_done(self, callback):
