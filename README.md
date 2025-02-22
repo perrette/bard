@@ -76,6 +76,16 @@ You can ask also ask the app to removed your (local) traces:
 bard --clean-cache-on-exit
 ```
 
+## Fine-tuning
+
+```bash
+bard --chunk-size 500  # that's the default
+```
+sets the maximum length (in characters) of a request. That means about 30 seconds of speech.
+The program will split up the text in chunks (according to the punctuation) and download them sequentially.
+The reading will start with the first chunk, that's why it is convenient to keep it small.
+You can set that smaller or up to the maximum allowed by the openai API (4096).
+
 ## Player
 
 The player was devised in conversation with Mistral's Le Chat and Open AI's Chat GPT, and my own experience with `pystray` on [scribe](https://github.com/perrette/scribe). It works.
