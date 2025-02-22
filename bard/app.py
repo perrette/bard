@@ -19,11 +19,12 @@ def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, 
     else:
         raise ValueError(f"Unsupported backend: {backend}")
 
-def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=15, resume=False, clean_cache_on_exit=False):
+def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=15, resume=False, clean_cache_on_exit=False, text=None, files=None):
 
     def callback_process_clipboard(icon, item):
         logger.info('Processing clipboard...')
         text = pyperclip.paste()
+        logger.info(f'{len(text)} characters copied')
         # clean-up the audio
         if icon._audioplayer is not None:
             icon._audioplayer.stop()
@@ -117,19 +118,33 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
     icon._model = model
     icon._options = options
 
+    icon._audioplayer = None
+
+    # leave the rest to the app otherwise this is blocking
+    if text:
+        pyperclip.copy(text)
+        callback_process_clipboard(icon, None)
+
+    elif files:
+        icon._audioplayer = AudioPlayer.from_files(files)
+        callback_play(icon, None)
+
+    elif default_files:
+        icon._audioplayer = AudioPlayer.from_files(default_files)
+
     # scan the cache directory for the most recent files
     # use the pattern f"chunk_{timestamp}_{i}.{self.output_format}"
     # e.g. chunk_2025-02-22T010457.819224_1.mp3
     # and keep only the latest timestamp
     # sort them by index {i} which may occupy more than one digit
-    if default_files is None and resume:
-        files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
-        files.sort()
+    elif resume:
+        all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
+        all_files.sort()
         try:
             import re
-            last_file = files[-1]
+            last_file = all_files[-1]
             timestamp = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(last_file)).groups()[0]
-            default_files = [f for f in files if f.name.startswith(f"chunk_{timestamp}")]
+            default_files = [f for f in all_files if f.name.startswith(f"chunk_{timestamp}")]
         except IndexError:
             logger.error("No files found in the cache directory")
             default_files = []
@@ -138,15 +153,8 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
             # only keep the last file
             default_files = [last_file]
 
-        if files:
-            icon._audioplayer = AudioPlayer.from_files([str(files[-1])])
-        else:
-            icon._audioplayer = None
-
-    if default_files:
-        icon._audioplayer = AudioPlayer.from_files(default_files)
-    else:
-        icon._audioplayer = None
+        if default_files:
+            icon._audioplayer = AudioPlayer.from_files(default_files)
 
     icon._jump_back = jump_back
     icon._jump_forward = jump_forward
@@ -171,16 +179,20 @@ def main():
     group.add_argument("--jump-forward", type=int, default=15, help="Jump forward time in seconds")
 
     group = parser.add_argument_group("Player's files")
-    group.add_argument("--default-file", nargs="+", help="Default file(s) to play")
+    parser.add_argument("--default-file", nargs="+", help="Default file(s) to pre-load in the player")
     parser.add_argument("--resume", action="store_true", help="Resume the last played file (if --default-file is not provided)")
     parser.add_argument("--clean-cache-on-exit", action="store_true", help="Clean the cache directory on exit")
+
+    group = parser.add_argument_group("Kick-start")
+    group.add_argument("--file", nargs="+", help="file(s) to play right away")
+    group.add_argument("--text", nargs="+", help="Text to speak right away")
 
     o = parser.parse_args()
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
-    app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward,
-                     resume=o.resume, clean_cache_on_exit=o.clean_cache_on_exit)
+    app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=" ".join(o.text) if o.text else None,
+                     resume=o.resume, files=o.file, clean_cache_on_exit=o.clean_cache_on_exit)
     app.run()
 
 if __name__ == "__main__":
