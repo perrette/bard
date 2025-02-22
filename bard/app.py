@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 import re
-import pystray
 from PIL import Image
 import pyperclip
 
@@ -18,6 +17,8 @@ def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, 
         raise ValueError(f"Unsupported backend: {backend}")
 
 def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=15, resume=False, clean_cache_on_exit=False, text=None, files=None):
+
+    import pystray
 
     def callback_process_clipboard(icon, item):
         logger.info('Processing clipboard...')
@@ -171,6 +172,9 @@ def main():
     group.add_argument("--backend", default="openaiapi", help="Backend to use")
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
 
+    group = parser.add_argument_group("Frontend")
+    group.add_argument("--no-tray", action="store_true", help="Don't show the tray icon. Terminal only. At the moment this launched a one-time audio player.")
+
     group = parser.add_argument_group("Player")
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
     group.add_argument("--jump-forward", type=int, default=15, help="Jump forward time in seconds")
@@ -188,9 +192,25 @@ def main():
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
-    app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
-                     resume=o.resume, files=o.file, clean_cache_on_exit=o.clean_cache_on_exit)
-    app.run()
+    if o.no_tray:
+        if o.file:
+            player = AudioPlayer.from_files(o.file)
+        elif o.text:
+            player = AudioPlayer.from_files(model.text_to_audio_files(o.text), callback_loop=lambda player: player.play())
+        else:
+            parser.error("No files or text provided to play. Exiting...")
+            sys.exit(1)
+
+        player.play()
+        player.wait()
+
+        if o.clean_cache_on_exit:
+            _clean_cache()
+
+    else:
+        app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
+                        resume=o.resume, files=o.file, clean_cache_on_exit=o.clean_cache_on_exit)
+        app.run()
 
 if __name__ == "__main__":
     main()
