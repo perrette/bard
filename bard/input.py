@@ -74,4 +74,9 @@ def preprocess_input_text(text):
     elif len(text) < 1024 and (text.startswith(os.path.sep) or ":\\" in text) and os.path.exists(text):
         return extract_text_from_filepath(text)
 
+    # HTML content
+    elif text[:20].lower().startswith(("<html", "<!doctype html", "<body", "<p")) and text.endswith(("</p>", "</html>", "</body>")):
+        from bard.html import extract_text_from_html
+        return extract_text_from_html(text)
+
     return text
