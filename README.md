@@ -32,7 +32,7 @@ pip install openai
 
 On GNOME desktop you can subsequently run:
 ```bash
-scribe-install [...]
+scribe-install [...] --openai-api-key $OPENAI_API_KEY
 ```
 to produce a `.desktop` file for GNOME's quick-launch
 (the `[...]` indicates any argument that `bard` takes)
@@ -61,6 +61,16 @@ For testing you can also start the app with
 bard --default-file /path/to/audio.mp3
 ```
 
+Or resume the previous recording:
+```bash
+bard --resume
+```
+
+Unless you removed your (local) traces:
+
+```bash
+bard --clean-cache-on-exit
+```
 
 ## Player
 
