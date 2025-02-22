@@ -48,7 +48,7 @@ class OpenaiAPI(AbstractModel):
         punctuation_marks = re.compile(r'([.!?])\s*')
 
         # Split the text into sentences
-        sentences = punctuation_marks.split(text)
+        sentences = punctuation_marks.split(text.strip())
 
         # Combine sentences into chunks of up to max_length characters
         chunks = []
@@ -58,6 +58,9 @@ class OpenaiAPI(AbstractModel):
         for i in range(0, len(sentences), 2):
             sentence = sentences[i]
             punctuation = sentences[i + 1] if i + 1 < len(sentences) else ""
+            sentence = sentence.strip()
+            if not sentence:
+                continue
             sentence_length = len(sentence) + len(punctuation)
 
             if current_length + sentence_length > max_length and current_chunk:
