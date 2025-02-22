@@ -1,7 +1,8 @@
 import os
 import subprocess
-
+import requests
 from bard.util import logger, CACHE_DIR
+
 
 def pdftotext(pdf_path, text_path):
     # Call pdftotext using subprocess
@@ -34,6 +35,28 @@ def read_text_from_pdf(pdf_path):
 
     return text
 
+def extract_text_from_filepath(filepath):
+    _, ext = os.path.splitext(filepath)
+    if ext == ".pdf":
+        return read_text_from_pdf(filepath)
+    elif ext in (".html", ".htm", ".xhtml"):
+        from bard.html import extract_text_from_html
+        return extract_text_from_html(open(filepath).read())
+    else:
+        return open(filepath).read()
+
+def extract_text_from_url(url):
+    try:
+        response = requests.get(url)
+    except requests.exceptions.MissingSchema:
+        url = "https://" + url
+        response = requests.get(url)
+    except requests.exceptions.InvalidSchema:
+        if url.startswith("file://"):
+            return extract_text_from_filepath(url[7:])
+
+    from bard.html import extract_text_from_html
+    return extract_text_from_html(response.content)
 
 def preprocess_input_text(text):
     """Check for text containers such as URL or file paths and extract the relevant text from it
@@ -49,13 +72,6 @@ def preprocess_input_text(text):
 
     # file paths
     elif len(text) < 1024 and (text.startswith(os.path.sep) or ":\\" in text) and os.path.exists(text):
-        if text.endswith(".pdf"):
-            return read_text_from_pdf(text)
-
-        elif text.endswith(".html"):
-            from bard.html import extract_text_from_html
-            return extract_text_from_html(open(text).read())
-
-        return open(text).read()
+        return extract_text_from_filepath(text)
 
     return text

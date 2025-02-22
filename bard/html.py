@@ -1,4 +1,3 @@
-import requests
 from bs4 import BeautifulSoup
 from readability import Document
 
@@ -26,18 +25,3 @@ def extract_readable_html(html):
 def extract_text_from_html(html):
     simple_html = extract_readable_html(html)
     return remove_tags(simple_html)
-
-
-def extract_text_from_url(url):
-    try:
-        response = requests.get(url)
-    except requests.exceptions.MissingSchema:
-        url = "https://" + url
-        response = requests.get(url)
-    except requests.exceptions.InvalidSchema:
-        if url.startswith("file://"):
-            from requests_file import FileAdapter
-            s = requests.Session()
-            s.mount('file://', FileAdapter())
-            response = s.get(url)
-    return extract_text_from_html(response.content)

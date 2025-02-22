@@ -190,8 +190,9 @@ def main():
 
     group = parser.add_argument_group("Kick-start")
     group = group.add_mutually_exclusive_group()
-    group.add_argument("--clipboard", help="Past text from clipboard to speak right away", action="store_true")
     group.add_argument("--text", help="Text to speak right away")
+    group.add_argument("--clipboard-text", help="The content of the copied clipboard, which is parsed for URL etc")
+    group.add_argument("--clipboard", help="Past text from clipboard to speak right away", action="store_true")
     group.add_argument("--text-file", help="Text file to read along.")
     group.add_argument("--html-file", help="HTML file to read along.")
     group.add_argument("--url", help="URL to fetch and read along.")
@@ -213,6 +214,9 @@ def main():
     elif o.text_file:
         with open(o.text_file) as f:
             o.text = f.read()
+
+    elif o.clipboard_text:
+        o.text = preprocess_input_text(o.clipboard_text)
 
     elif o.clipboard:
         o.text = preprocess_input_text(pyperclip.paste())
