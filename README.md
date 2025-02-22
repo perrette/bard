@@ -1,5 +1,5 @@
 [![pypi](https://img.shields.io/pypi/v/bard-cli)](https://pypi.org/project/bard-cli)
-![](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fperrette%bard%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
+![](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fperrette%2Fbard%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
 
 # Bard  <img src="https://github.com/perrette/bard/raw/main/bard_data/share/icon.png" width=48px>
 
