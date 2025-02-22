@@ -40,8 +40,6 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
     def callback_stop(icon, item):
         logger.info('Stopping...')
         icon._audioplayer.stop()
-        if icon._options["clean_cache_on_exit"]:
-            _clean_cache()
 
     def callback_jump_back(icon, item):
         logger.info('Jumping back...')
@@ -60,6 +58,8 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
 
     def callback_quit(icon, item):
         logger.info('Quitting...')
+        if icon._options["clean_cache_on_exit"]:
+            _clean_cache()
         icon.stop()
 
     def callback_toggle_option(icon, item):
@@ -133,7 +133,7 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
         else:
             icon._audioplayer = None
 
-    if default_files is not None:
+    if default_files:
         icon._audioplayer = AudioPlayer.from_files(default_files)
     else:
         icon._audioplayer = None
