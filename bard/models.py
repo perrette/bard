@@ -3,6 +3,7 @@ import re
 import datetime
 import tqdm
 import shutil
+import time
 from bard.util import logger
 
 HOME = os.environ.get('HOME', os.path.expanduser('~'))
@@ -28,6 +29,7 @@ class OpenaiAPI(AbstractModel):
         self.voice = voice or "alloy"
         self.output_format = output_format
         self.max_length = max_length or 4096
+        self.is_downloading = False
 
     def text_to_audio_files(self, text):
         # Split the text into chunks of up to 4096 characters, ending at punctuation marks
@@ -37,11 +39,20 @@ class OpenaiAPI(AbstractModel):
 
         timestamp = f"{datetime.datetime.now().isoformat().replace(':', '')}"
 
-        for i, chunk in tqdm.tqdm(enumerate(chunks), total=len(chunks), desc="Generating audio"):
-            output_file = os.path.join(CACHE_DIR, f"chunk_{timestamp}_{i}.{self.output_format}")
-            self.generate_audio_file(chunk, output_file)
-            yield output_file
+        self.is_downloading = True
 
+        try:
+            for i, chunk in tqdm.tqdm(enumerate(chunks), total=len(chunks), desc="Generating audio"):
+                output_file = os.path.join(CACHE_DIR, f"chunk_{timestamp}_{i}.{self.output_format}")
+                self.generate_audio_file(chunk, output_file)
+                yield output_file
+
+        finally:
+            self.is_downloading = False
+
+    def wait(self):
+        while self.is_downloading:
+            time.sleep(0.1)
 
     def split_text_into_chunks(self, text, max_length):
         # Regular expression to split text at punctuation marks
