@@ -15,18 +15,11 @@ sudo apt install libcairo-dev libgirepository1.0-dev gir1.2-appindicator3-0.1  #
 pip install PyGObject # Ubuntu ONLY (not needed on MacOS)
 ```
 
-Install the main app
+Install the main app with all its optional dependencies:
 
 ```bash
-pip install bard-cli
+pip install bard-cli[all]
 ```
-
-Install optional dependencies
-```bash
-pip install openai
-```
-(at the moment openai is the only backend so you better have it installed ;))
-
 
 ### GNOME
 
@@ -60,7 +53,7 @@ You can also do a one-off reading by indicating the source content with one of t
 ```bash
 bard --text "Hello world, how are you today"
 bard --clipboard
-bard --url "example.com"
+bard --url "example.com" # also accepts file://
 bard --html-file /path/to/downloaded.html # access a page with paywal, download it, feed it to bard
 bard --pdf-file /path/to/document.pdf  # careful if you pay for it... (the full thing will be transcribed even if you listen to a small bit of it)
 bard --audio-file /path/to/audio.mp3 # no actual request, only useful for testing the audio player

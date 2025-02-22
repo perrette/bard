@@ -34,4 +34,10 @@ def extract_text_from_url(url):
     except requests.exceptions.MissingSchema:
         url = "https://" + url
         response = requests.get(url)
+    except requests.exceptions.InvalidSchema:
+        if url.startswith("file://"):
+            from requests_file import FileAdapter
+            s = requests.Session()
+            s.mount('file://', FileAdapter())
+            response = s.get(url)
     return extract_text_from_html(response.content)
