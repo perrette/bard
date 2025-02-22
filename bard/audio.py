@@ -5,6 +5,7 @@ import soundfile as sf
 import threading
 import numpy as np
 import time
+from bard.util import logger
 
 class AudioPlayer:
     def __init__(self, data, fs):
@@ -16,6 +17,7 @@ class AudioPlayer:
         self.current_position = 0  # Track position in samples
         self.is_playing = False
         self.is_stopped = False  # Track if we should reset position
+        self.is_streaming = False
         self.lock = threading.Lock()
         self._done_callback = None
 
@@ -132,7 +134,7 @@ class AudioPlayer:
         self.append_data(data)
 
     @classmethod
-    def from_files(cls, filenames):
+    def from_files(cls, filenames, callback=None, callback_loop=None):
         # Create an iterator from the filenames list
         print("Loading files:", filenames)
         filenames_iter = iter(filenames)
@@ -145,12 +147,30 @@ class AudioPlayer:
         def append_remaining_files():
             try:
                 for filename in filenames_iter:
+                    player.is_streaming = True
                     player.append_file(filename)
+                    if callback_loop:
+                        callback_loop(player)
             except Exception as e:
                 print(f"Error appending files: {e}")
+            finally:
+                player.is_streaming = False
+                if callback:
+                    callback(player)
 
+        player.is_streaming = True
         player._append_thread = threading.Thread(target=append_remaining_files)
         player._append_thread.start()
 
         # Return the first instance immediately
         return player
+
+    def wait(self):
+        """ Wait for playback to finish """
+        logger.debug("player wait called")
+        if self.play_thread:
+            logger.debug("player waiting for play thread")
+            self.play_thread.join()
+        if self.is_streaming:
+            logger.debug("player waiting for append/streaming thread")
+            self._append_thread.join()
