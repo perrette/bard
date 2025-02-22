@@ -35,7 +35,7 @@ def read_text_from_pdf(pdf_path):
     return text
 
 
-def process_input_text(text):
+def preprocess_input_text(text):
     """Check for text containers such as URL or file paths and extract the relevant text from it
     """
     text = text.strip()

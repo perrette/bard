@@ -9,7 +9,7 @@ import bard_data
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
 from bard.util import logger, clean_cache as _clean_cache, CACHE_DIR
-from bard.input import read_text_from_pdf, process_input_text
+from bard.input import read_text_from_pdf, preprocess_input_text
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
     if backend == "openaiapi":
@@ -25,7 +25,7 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
         logger.info('Processing clipboard...')
         text = pyperclip.paste()
         logger.info(f'{len(text)} characters copied')
-        text = process_input_text(text)
+        text = preprocess_input_text(text)
 
         # clean-up the audio
         if icon._audioplayer is not None:
@@ -215,7 +215,7 @@ def main():
             o.text = f.read()
 
     elif o.clipboard:
-        o.text = process_input_text(pyperclip.paste())
+        o.text = preprocess_input_text(pyperclip.paste())
 
     elif o.pdf_file:
         o.text = read_text_from_pdf(o.pdf_file)
