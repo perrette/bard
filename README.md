@@ -58,12 +58,12 @@ and send that to the AI model for reading aloud.
 For testing you can also start the app with
 
 ```bash
-bard --file /path/to/audio.mp3
+bard --audio-file /path/to/audio.mp3
 ```
 and then the actual API:
 
 ```bash
-bard --text "Hello world, how are you today" 
+bard --text "Hello world, how are you today"
 ```
 
 You can resume the previous recording (the app won't play right away in this case):
