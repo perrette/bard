@@ -68,11 +68,10 @@ bard --audio-file /path/to/audio.mp3 # no actual request, only useful for testin
 The above command will still launch the system tray icon, and so provide access to the audio player's (basic) controls.
 If you wish to just read aloud without the icon tray app, you may add the `--no-tray` parameter.
 
-You can resume the previous recording (the app won't play right away in this case):
+You can resume the previous recording (the audio won't play right away in this case, but you can use the reader):
 ```bash
 bard --resume
 ```
-
 You can ask also ask the app to removed your (local) traces:
 ```bash
 bard --clean-cache-on-exit
