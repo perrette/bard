@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bard"
+name = "bard-cli"
 dynamic = ["version"]
 description = "bard is a text to speech tool based on existing open-source models (local install) and APIs to install on your desktop"
 authors = [

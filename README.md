@@ -1,4 +1,4 @@
-[![pypi](https://img.shields.io/pypi/v/bard)](https://pypi.org/project/bard)
+[![pypi](https://img.shields.io/pypi/v/bard-cli)](https://pypi.org/project/bard-cli)
 ![](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fperrette%bard%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
 
 # Bard  <img src="bard_data/share/icon.png" width=48px>
@@ -11,7 +11,22 @@ Dependencies include:
 - `sounddevice`
 - `soundfile`
 
-# Usage
+## Install
+
+```bash
+pip install bard-cli
+```
+
+### GNOME
+
+On GNOME desktop you can subsequently run:
+```bash
+scribe-install [...]
+```
+to produce a `.desktop` file for GNOME's quick-launch
+(the `[...]` indicates any argument that `bard` takes)
+
+## Usage
 
 In a terminal:
 
@@ -34,14 +49,3 @@ For testing you can also start the app with
 ```bash
 bard --default-file /path/to/audio.mp3
 ```
-
-
-## Install
-
-### GNOME
-
-On GNOME desktop you can run:
-```bash
-scribe-install
-```
-to produce a `.desktop` file for GNOME's quick-launch.
