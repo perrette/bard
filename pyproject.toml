@@ -21,11 +21,6 @@ dependencies = [
     "pystray",
 ]
 
-[project.optional-dependencies]
-app = ["PyGObject"]
-openai = ["openai"]
-all = ["openai"]
-
 classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -42,11 +37,10 @@ keywords = [
     "openai",
 ]
 
-[tool.setuptools]
-packages = [ "bard", "bard_data" ]
-
-[tool.setuptools_scm]
-write_to = "bard/_version.py"
+[project.optional-dependencies]
+app = ["PyGObject"]
+openai = ["openai"]
+all = ["openai"]
 
 [project.urls]
 Homepage = "https://github.com/perrette/bard"
@@ -54,3 +48,9 @@ Homepage = "https://github.com/perrette/bard"
 [project.scripts]
 bard = "bard.app:main"
 bard-install = "bard.install_desktop:main"
+
+[tool.setuptools]
+packages = [ "bard", "bard_data" ]
+
+[tool.setuptools_scm]
+write_to = "bard/_version.py"
