@@ -21,7 +21,7 @@ def main():
     # if not o.terminal and "--no-prompt" not in o.arguments:
     #     o.arguments.append("--no-prompt")
 
-    SOURCE_BARD_DATA = os.path.dirname(bard_data.__file__)
+    SOURCE_BARD_DATA = os.path.dirname(bard_data.__file__) if bard_data.__file__ else bard_data.__path__[0]
 
     HOME = os.environ.get('HOME',os.path.expanduser('~'))
     XDG_SHARE = os.environ.get('XDG_DATA_HOME', os.path.join(HOME, '.local','share'))

@@ -94,7 +94,12 @@ def create_app(model, models=[], default_file=None):
         pystray.MenuItem('Quit', callback_quit),
     )
 
-    image = Image.open(Path(bard_data.__file__).parent / "share" / "icon.png")
+    if bard_data.__file__ is not None:
+        data_folder = Path(bard_data.__file__).parent
+    else:
+        data_folder = Path(bard_data.__path__[0])
+
+    image = Image.open(data_folder / "share" / "icon.png")
     icon = pystray.Icon('bard', icon=image, title="Bard", menu=menu)
 
     icon._model = model

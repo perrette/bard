@@ -3,6 +3,6 @@
 Terminal={terminal}
 Type=Application
 Name={name}
-Exec={bin_folder}/scribe{options}
+Exec={bin_folder}/bard{options}
 Icon={icon_folder}/icon.png
 StartupWMClass={StartupWMClass}
