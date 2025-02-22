@@ -182,13 +182,13 @@ def main():
 
     group = parser.add_argument_group("Kick-start")
     group.add_argument("--file", nargs="+", help="file(s) to play right away")
-    group.add_argument("--text", nargs="+", help="Text to speak right away")
+    group.add_argument("--text", help="Text to speak right away")
 
     o = parser.parse_args()
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
-    app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=" ".join(o.text) if o.text else None,
+    app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
                      resume=o.resume, files=o.file, clean_cache_on_exit=o.clean_cache_on_exit)
     app.run()
 
