@@ -154,7 +154,7 @@ def main():
     group.add_argument("--output-format", default="mp3", help="Output format")
     group.add_argument("--openai-api-key", default=None, help="OpenAI API key")
     group.add_argument("--backend", default="openaiapi", help="Backend to use")
-    group.add_argument("--chunk-size", default=4096, type=int, help="Max upload chunk size")
+    group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
 
     group = parser.add_argument_group("Player")
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
