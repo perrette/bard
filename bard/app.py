@@ -40,7 +40,7 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
     def callback_stop(icon, item):
         logger.info('Stopping...')
         icon._audioplayer.stop()
-        if clean_cache_on_exit:
+        if icon._options["clean_cache_on_exit"]:
             _clean_cache()
 
     def callback_jump_back(icon, item):
@@ -62,6 +62,9 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
         logger.info('Quitting...')
         icon.stop()
 
+    def callback_toggle_option(icon, item):
+        icon._options[str(item)] = not icon._options[str(item)]
+
     def is_processed(item):
         return icon._audioplayer is not None
 
@@ -75,6 +78,10 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
             return False
         return not icon._audioplayer.is_playing and not icon._audioplayer.is_done
 
+    options = {
+        "clean_cache_on_exit": clean_cache_on_exit,
+    }
+
     menu = pystray.Menu(
         pystray.MenuItem('Process Copied Text', callback_process_clipboard),
         pystray.MenuItem('Play', callback_play, visible=show_play),
@@ -82,6 +89,10 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
         pystray.MenuItem('Stop', callback_stop, visible=is_processed),
         pystray.MenuItem(f'Jump Back {jump_back} s', callback_jump_back, visible=is_processed),
         pystray.MenuItem(f'Jump Forward {jump_forward} s', callback_jump_forward, visible=is_processed),
+        pystray.MenuItem(f'Options', pystray.Menu(
+                *(pystray.MenuItem(name, callback_toggle_option, checked=lambda item: icon._options[str(item)])
+                    for name in options if isinstance(options[name], bool)))
+        ),
         pystray.MenuItem('Quit', callback_quit),
     )
 
@@ -94,6 +105,7 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
     icon = pystray.Icon('bard', icon=image, title="Bard", menu=menu)
 
     icon._model = model
+    icon._options = options
 
     # scan the cache directory for the most recent files
     # use the pattern f"chunk_{timestamp}_{i}.{self.output_format}"
