@@ -188,10 +188,14 @@ def main():
     group = parser.add_argument_group("Kick-start")
     group.add_argument("--file", nargs="+", help="file(s) to play right away")
     group.add_argument("--text", help="Text to speak right away")
+    group.add_argument("--clipboard", help="Past text from clipboard to speak right away", action="store_true")
 
     o = parser.parse_args()
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
+
+    if o.clipboard:
+        o.text = pyperclip.paste()
 
     if o.no_tray:
         if o.file:
