@@ -40,6 +40,7 @@ keywords = [
 [project.optional-dependencies]
 app = ["PyGObject"]
 openai = ["openai"]
+html = ["beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml"]
 all = ["openai"]
 
 [project.urls]

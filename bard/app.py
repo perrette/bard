@@ -187,18 +187,26 @@ def main():
     parser.add_argument("--clean-cache-on-exit", action="store_true", help="Clean the cache directory on exit")
 
     group = parser.add_argument_group("Kick-start")
+    group = group.add_mutually_exclusive_group()
     group.add_argument("--clipboard", help="Past text from clipboard to speak right away", action="store_true")
     group.add_argument("--text", help="Text to speak right away")
-    group.add_argument("--text-file", help="Text file to upload.")
-    group.add_argument("--pdf-file", help="PDF File to upload (pdf2text from poppler is used).")
+    group.add_argument("--text-file", help="Text file to read along.")
+    group.add_argument("--html-file", help="HTML file to read along.")
+    group.add_argument("--url", help="URL to fetch and read along.")
+    group.add_argument("--pdf-file", help="PDF File to read along (pdf2text from poppler is used).")
     group.add_argument("--audio-file", nargs="+", help="audio file(s) to play right away")
 
     o = parser.parse_args()
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
-    if o.pdf_file:
-        o.text = read_text_from_pdf(o.pdf_file)
+    if o.url:
+        from bard.html import extract_text_from_url
+        o.text = extract_text_from_url(o.url)
+
+    elif o.html_file:
+        from bard.html import extract_text_from_html
+        o.text = extract_text_from_html(open(o.html_file).read())
 
     elif o.text_file:
         with open(o.text_file) as f:
@@ -206,6 +214,10 @@ def main():
 
     elif o.clipboard:
         o.text = pyperclip.paste()
+
+    elif o.pdf_file:
+        o.text = read_text_from_pdf(o.pdf_file)
+
 
     if o.no_tray:
         if o.audio_file:

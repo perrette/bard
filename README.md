@@ -55,16 +55,18 @@ and send that to the AI model for reading aloud.
 
 <img src=https://github.com/user-attachments/assets/a90ccd1c-7431-4554-9d41-0e9c1b4399f2 width=300px>
 
-For testing you can also start the app with
-
-```bash
-bard --audio-file /path/to/audio.mp3
-```
-and then the actual API:
+You can also do a one-off reading by indicating the source content with one of the following:
 
 ```bash
 bard --text "Hello world, how are you today"
+bard --clipboard
+bard --url "example.com"
+bard --html-file /path/to/downloaded.html # access a page with paywal, download it, feed it to bard
+bard --pdf-file /path/to/document.pdf  # careful if you pay for it... (the full thing will be transcribed even if you listen to a small bit of it)
+bard --audio-file /path/to/audio.mp3 # no actual request, only useful for testing the audio player
 ```
+The above command will still launch the system tray icon, and so provide access to the audio player's (basic) controls.
+If you wish to just read aloud without the icon tray app, you may add the `--no-tray` parameter.
 
 You can resume the previous recording (the app won't play right away in this case):
 ```bash
