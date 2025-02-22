@@ -6,9 +6,10 @@ from PIL import Image
 import pyperclip
 
 import bard_data
-from bard.models import OpenaiAPI, clean_cache as _clean_cache, CACHE_DIR
+from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
-from bard.util import logger
+from bard.util import logger, clean_cache as _clean_cache, CACHE_DIR
+from bard.input import read_text_from_pdf
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
     if backend == "openaiapi":
@@ -186,16 +187,20 @@ def main():
     parser.add_argument("--clean-cache-on-exit", action="store_true", help="Clean the cache directory on exit")
 
     group = parser.add_argument_group("Kick-start")
-    group.add_argument("--text", help="Text to speak right away")
     group.add_argument("--clipboard", help="Past text from clipboard to speak right away", action="store_true")
-    group.add_argument("--text-file", help="File to upload. Currently only text file supported.")
+    group.add_argument("--text", help="Text to speak right away")
+    group.add_argument("--text-file", help="Text file to upload.")
+    group.add_argument("--pdf-file", help="PDF File to upload (pdf2text from poppler is used).")
     group.add_argument("--audio-file", nargs="+", help="audio file(s) to play right away")
 
     o = parser.parse_args()
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
-    if o.text_file:
+    if o.pdf_file:
+        o.text = read_text_from_pdf(o.pdf_file)
+
+    elif o.text_file:
         with open(o.text_file) as f:
             o.text = f.read()
 
