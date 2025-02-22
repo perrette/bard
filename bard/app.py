@@ -120,6 +120,9 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
 
     icon._audioplayer = None
 
+    icon._jump_back = jump_back
+    icon._jump_forward = jump_forward
+
     # leave the rest to the app otherwise this is blocking
     if text:
         pyperclip.copy(text)
@@ -154,9 +157,6 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
 
         if default_files:
             icon._audioplayer = AudioPlayer.from_files(default_files)
-
-    icon._jump_back = jump_back
-    icon._jump_forward = jump_forward
 
     return icon
 
