@@ -30,8 +30,8 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
             icon._audioplayer = None
         try:
             icon._audioplayer = AudioPlayer.from_files(icon._model.text_to_audio_files(text),
-                                                       callback_loop=lambda player: icon._audioplayer.play())
-            icon._audioplayer.on_done(lambda x: icon.update_menu())
+                                                       callback_loop=lambda player: player.play())
+            icon._audioplayer.on_done(lambda x: icon.update_menu()).play()
             logger.info('Done!')
         finally:
             icon.update_menu()
