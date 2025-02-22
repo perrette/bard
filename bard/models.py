@@ -19,7 +19,7 @@ class AbstractModel:
 
 class OpenaiAPI(AbstractModel):
     def __init__(self, api_key=None, voice=None,
-                 model=None, output_format="mp3"):
+                 model=None, max_length=None, output_format="mp3"):
         from openai import OpenAI
         self.client = OpenAI(
             api_key=api_key,
@@ -27,10 +27,11 @@ class OpenaiAPI(AbstractModel):
         self.model = model or "tts-1"
         self.voice = voice or "alloy"
         self.output_format = output_format
+        self.max_length = max_length or 4096
 
     def text_to_audio_files(self, text):
         # Split the text into chunks of up to 4096 characters, ending at punctuation marks
-        chunks = self.split_text_into_chunks(text, max_length=4096)
+        chunks = self.split_text_into_chunks(text, max_length=self.max_length)
 
         os.makedirs(CACHE_DIR, exist_ok=True)
 

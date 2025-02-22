@@ -13,9 +13,9 @@ from bard.models import OpenaiAPI, clean_cache as _clean_cache, CACHE_DIR
 from bard.audio import AudioPlayer
 from bard.util import logger
 
-def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi"):
+def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
     if backend == "openaiapi":
-        return OpenaiAPI(voice=voice, model=model, output_format=output_format, api_key=openai_api_key)
+        return OpenaiAPI(voice=voice, model=model, output_format=output_format, api_key=openai_api_key, max_length=chunk_size)
     else:
         raise ValueError(f"Unsupported backend: {backend}")
 
@@ -154,6 +154,7 @@ def main():
     group.add_argument("--output-format", default="mp3", help="Output format")
     group.add_argument("--openai-api-key", default=None, help="OpenAI API key")
     group.add_argument("--backend", default="openaiapi", help="Backend to use")
+    group.add_argument("--chunk-size", default=4096, type=int, help="Max upload chunk size")
 
     group = parser.add_argument_group("Player")
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
@@ -166,7 +167,7 @@ def main():
 
     o = parser.parse_args()
 
-    model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend)
+    model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
     app = create_app(model, default_files=o.default_file, jump_back=o.jump_back, jump_forward=o.jump_forward,
                      resume=o.resume, clean_cache_on_exit=o.clean_cache_on_exit)
