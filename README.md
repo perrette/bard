@@ -32,7 +32,7 @@ pip install openai
 
 On GNOME desktop you can subsequently run:
 ```bash
-scribe-install [...] --openai-api-key $OPENAI_API_KEY
+bard-install [...] --openai-api-key $OPENAI_API_KEY
 ```
 to produce a `.desktop` file for GNOME's quick-launch
 (the `[...]` indicates any argument that `bard` takes)
