@@ -215,7 +215,7 @@ def main():
             o.text = f.read()
 
     elif o.clipboard:
-        o.text = pyperclip.paste()
+        o.text = process_input_text(pyperclip.paste())
 
     elif o.pdf_file:
         o.text = read_text_from_pdf(o.pdf_file)
