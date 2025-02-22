@@ -5,17 +5,28 @@
 
 Bard is a text to speech client that integrates on the desktop
 
-Dependencies include:
-- `openai`
-- `pystray`
-- `sounddevice`
-- `soundfile`
-
 ## Install
+
+Install libraries or system-specific dependencies:
+
+```bash
+sudo apt-get install portaudio19-dev xclip #  portaudio19-dev becomes portaudio with Homebrew
+sudo apt install libcairo-dev libgirepository1.0-dev gir1.2-appindicator3-0.1  # Ubuntu ONLY (not needed on MacOS)
+pip install PyGObject # Ubuntu ONLY (not needed on MacOS)
+```
+
+Install the main app
 
 ```bash
 pip install bard-cli
 ```
+
+Install optional dependencies
+```bash
+pip install openai
+```
+(at the moment openai is the only backend so you better have it installed ;))
+
 
 ### GNOME
 
@@ -49,3 +60,15 @@ For testing you can also start the app with
 ```bash
 bard --default-file /path/to/audio.mp3
 ```
+
+
+## Player
+
+The player was devised in conversation with Mistral's Le Chat and Open AI's Chat GPT, and my own experience with `pystray` on [scribe](https://github.com/perrette/scribe). It works.
+
+I'm open for suggestion for other, platform-independent integrations to the OS.
+
+
+## Roadmap
+
+Include more backends including local ones.

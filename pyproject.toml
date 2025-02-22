@@ -13,7 +13,18 @@ readme = "README.md"
 license = { file="LICENSE" }
 requires-python = ">=3.9"
 dependencies = [
+    "numpy",
+    "sounddevice",
+    "soundfile",
+    "tqdm",
+    "pyperclip",
+    "pystray",
 ]
+
+[project.optional-dependencies]
+app = ["PyGObject"]
+openai = ["openai"]
+all = ["openai"]
 
 classifiers = [
     "Programming Language :: Python :: 3.9",
@@ -25,16 +36,11 @@ classifiers = [
 ]
 
 keywords = [
-    "text to speech",
+    "text-to-speech",
     "AI",
     "language",
     "openai",
 ]
-
-[project.optional-dependencies]
-app = ["pystray", "PyGObject"]
-openai = ["openai"]
-all = ["openai", "pystray"]
 
 [tool.setuptools]
 packages = [ "bard", "bard_data" ]
