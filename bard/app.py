@@ -1,11 +1,9 @@
 import os
+import sys
 from pathlib import Path
-import logging
-
+import re
 import pystray
 from PIL import Image
-# from pydub import AudioSegment
-# from pydub.playback import play
 import pyperclip
 
 import bard_data
@@ -141,7 +139,6 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
         all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
         all_files.sort()
         try:
-            import re
             last_file = all_files[-1]
             timestamp = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(last_file)).groups()[0]
             default_files = [f for f in all_files if f.name.startswith(f"chunk_{timestamp}")]
@@ -166,7 +163,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
 
-    group = parser.add_argument_group("Backend")
+    group = parser.add_argument_group("API Backend")
     group.add_argument("--voice", default=None, help="Voice to use")
     group.add_argument("--model", default=None, help="Model to use")
     group.add_argument("--output-format", default="mp3", help="Output format")
