@@ -189,12 +189,17 @@ def main():
     group.add_argument("--audio-file", nargs="+", help="audio file(s) to play right away")
     group.add_argument("--text", help="Text to speak right away")
     group.add_argument("--clipboard", help="Past text from clipboard to speak right away", action="store_true")
+    group.add_argument("--file", help="File to upload. Currently only text file supported.")
 
     o = parser.parse_args()
 
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
-    if o.clipboard:
+    if o.file:
+        with open(o.file) as f:
+            o.text = f.read()
+
+    elif o.clipboard:
         o.text = pyperclip.paste()
 
     if o.no_tray:
