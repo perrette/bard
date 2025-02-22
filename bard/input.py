@@ -33,3 +33,29 @@ def read_text_from_pdf(pdf_path):
     os.remove(text_path)
 
     return text
+
+
+def process_input_text(text):
+    """Check for text containers such as URL or file paths and extract the relevant text from it
+    """
+    text = text.strip()
+
+    # URLs
+    if text.startswith(("https://", "http://", "file://")):
+        url = text
+        logger.info(f'Fetch text from {url}')
+        from bard.html import extract_text_from_url
+        return extract_text_from_url(url)
+
+    # file paths
+    elif len(text) < 1024 and (text.startswith(os.path.sep) or ":\\" in text) and os.path.exists(text):
+        if text.endswith(".pdf"):
+            return read_text_from_pdf(text)
+
+        elif text.endswith(".html"):
+            from bard.html import extract_text_from_html
+            return extract_text_from_html(open(text).read())
+
+        return open(text).read()
+
+    return text
