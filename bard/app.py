@@ -27,6 +27,7 @@ def create_app(model, models=[], default_files=None, jump_back=15, jump_forward=
         icon._audioplayer = AudioPlayer.from_files(icon._model.text_to_audio_files(text))
         logger.info('Done!')
         icon.update_menu()
+        callback_play(icon, item)
 
     def callback_play(icon, item):
         logger.info('Playing...')
