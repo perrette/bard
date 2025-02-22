@@ -58,16 +58,20 @@ and send that to the AI model for reading aloud.
 For testing you can also start the app with
 
 ```bash
-bard --default-file /path/to/audio.mp3
+bard --file /path/to/audio.mp3
+```
+and then the actual API:
+
+```bash
+bard --text "Hello world, how are you today" 
 ```
 
-Or resume the previous recording:
+You can resume the previous recording (the app won't play right away in this case):
 ```bash
 bard --resume
 ```
 
-Unless you removed your (local) traces:
-
+You can ask also ask the app to removed your (local) traces:
 ```bash
 bard --clean-cache-on-exit
 ```
