@@ -11,9 +11,7 @@ import pyperclip
 import bard_data
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("bard")
+from bard.util import logger
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi"):
     if backend == "openaiapi":
