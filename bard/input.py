@@ -67,7 +67,6 @@ def preprocess_input_text(text):
     if text.startswith(("https://", "http://", "file://")):
         url = text
         logger.info(f'Fetch text from {url}')
-        from bard.html import extract_text_from_url
         return extract_text_from_url(url)
 
     # file paths
