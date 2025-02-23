@@ -5,6 +5,7 @@ import soundfile as sf
 import threading
 import numpy as np
 import time
+import subprocess as sp
 from bard.util import logger
 
 def read_audio_with_pydub(filename):
@@ -24,7 +25,7 @@ def read_audio_with_pydub(filename):
 
 
 class AudioPlayer:
-    def __init__(self, data, fs):
+    def __init__(self, data, fs, filepaths=None):
         if data.ndim == 1:
             data = data[:, np.newaxis]
         # Add 0.5 seconds of silence before the data
@@ -39,6 +40,7 @@ class AudioPlayer:
         self.is_streaming = False
         self.lock = threading.Lock()
         self._done_callback = None
+        self.filepaths = [str(f) for f in filepaths] or []
 
     @classmethod
     def from_file(cls, filename):
@@ -47,7 +49,7 @@ class AudioPlayer:
             data, fs = sf.read(filename, dtype='float32')  # Load file into memory
         except sf.LibsndfileError:
             data, fs = read_audio_with_pydub(filename)
-        return cls(data, fs)
+        return cls(data, fs, filepaths=[filename])
 
     def on_done(self, callback):
         self._done_callback = callback
@@ -154,6 +156,7 @@ class AudioPlayer:
         if fs != self.fs:
             raise ValueError("Sample rate of file does not match current track")
         self.append_data(data)
+        self.filepaths.append(str(filename))
 
     @classmethod
     def from_files(cls, filenames, callback=None, callback_loop=None):
@@ -196,3 +199,11 @@ class AudioPlayer:
         if self.is_streaming:
             logger.debug("player waiting for append/streaming thread")
             self._append_thread.join()
+
+    def open_external(self, external_player=None):
+        if external_player is None:
+            external_player = "xdg-open"
+        try:
+            sp.check_call(f"{external_player} {' '.join(self.filepaths)}", shell=True)
+        except sp.CalledProcessError:
+            sp.check_call(f"{external_player} {self.filepaths[0]}", shell=True)

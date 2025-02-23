@@ -39,7 +39,8 @@ def get_audio_files_from_cache(index=-1):
         # only keep the last file
         return [last_file]
 
-def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_forward=15, clean_cache_on_exit=False, text=None, audio_files=None):
+def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_forward=15,
+               clean_cache_on_exit=False, text=None, audio_files=None, external_player=None):
 
     import pystray
 
@@ -100,6 +101,13 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
     def callback_toggle_option(icon, item):
         icon._options[str(item)] = not icon._options[str(item)]
 
+    def callback_open_external(icon, item):
+        logger.info('Opening with external player...')
+        if icon._audioplayer is None:
+            logger.error('No audio to play')
+            return
+        icon._audioplayer.open_external(external_player)
+
     def is_processed(item):
         return icon._audioplayer is not None
 
@@ -124,6 +132,7 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
         pystray.MenuItem('Stop', callback_stop, visible=is_processed),
         pystray.MenuItem(f'Jump Back {jump_back} s', callback_jump_back, visible=is_processed),
         pystray.MenuItem(f'Jump Forward {jump_forward} s', callback_jump_forward, visible=is_processed),
+        pystray.MenuItem(f'Open with external player', callback_open_external, visible=external_player is not None),
         pystray.MenuItem(f'Options', pystray.Menu(
                 *(pystray.MenuItem(name, callback_toggle_option, checked=lambda item: icon._options[str(item)])
                     for name in options if isinstance(options[name], bool)))
@@ -180,6 +189,8 @@ def main():
     group = parser.add_argument_group("Player")
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
     group.add_argument("--jump-forward", type=int, default=15, help="Jump forward time in seconds")
+    group.add_argument("--open-external", action="store_true")
+    group.add_argument("--external-player", default="xdg-open")
 
     group = parser.add_argument_group("Player's files")
     parser.add_argument("--default-audio-file", nargs="+", help="Default audio file(s) to pre-load in the player")
@@ -236,15 +247,18 @@ def main():
             parser.error("No files or text provided to play. Exiting...")
             sys.exit(1)
 
-        player.play()
-        player.wait()
+        if o.open_external:
+            player.open_external(o.external_player)
+        else:
+            player.play()
+            player.wait()
 
         if o.clean_cache_on_exit:
             _clean_cache()
 
     else:
         app = create_app(model, default_audio_files=o.default_audio_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
-                        audio_files=o.audio_file, clean_cache_on_exit=o.clean_cache_on_exit)
+                        audio_files=o.audio_file, clean_cache_on_exit=o.clean_cache_on_exit, external_player=o.external_player)
         app.run()
 
 if __name__ == "__main__":
