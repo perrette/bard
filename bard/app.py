@@ -17,7 +17,29 @@ def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, 
     else:
         raise ValueError(f"Unsupported backend: {backend}")
 
-def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_forward=15, resume=False, clean_cache_on_exit=False, text=None, audio_files=None):
+def get_audio_files_from_cache(index=-1):
+    """
+    scan the cache directory for the most recent files
+    use the pattern f"chunk_{timestamp}_{i}.{self.output_format}"
+    e.g. chunk_2025-02-22T010457.819224_1.mp3
+    and keep only the latest timestamp
+    sort them by index {i} which may occupy more than one digit
+    """
+    all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
+    all_files.sort()
+    try:
+        last_file = all_files[index]
+        timestamp = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(last_file)).groups()[0]
+        return [f for f in all_files if f.name.startswith(f"chunk_{timestamp}")]
+    except IndexError:
+        logger.error("No files found in the cache directory")
+        return []
+    except AttributeError:
+        logger.error(f"Failed to parse the timestamp from the file name: {last_file}")
+        # only keep the last file
+        return [last_file]
+
+def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_forward=15, clean_cache_on_exit=False, text=None, audio_files=None):
 
     import pystray
 
@@ -137,29 +159,6 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
     elif default_audio_files:
         icon._audioplayer = AudioPlayer.from_files(default_audio_files)
 
-    # scan the cache directory for the most recent files
-    # use the pattern f"chunk_{timestamp}_{i}.{self.output_format}"
-    # e.g. chunk_2025-02-22T010457.819224_1.mp3
-    # and keep only the latest timestamp
-    # sort them by index {i} which may occupy more than one digit
-    elif resume:
-        all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
-        all_files.sort()
-        try:
-            last_file = all_files[-1]
-            timestamp = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(last_file)).groups()[0]
-            default_audio_files = [f for f in all_files if f.name.startswith(f"chunk_{timestamp}")]
-        except IndexError:
-            logger.error("No files found in the cache directory")
-            default_audio_files = []
-        except AttributeError:
-            logger.error(f"Failed to parse the timestamp from the file name: {last_file}")
-            # only keep the last file
-            default_audio_files = [last_file]
-
-        if default_audio_files:
-            icon._audioplayer = AudioPlayer.from_files(default_audio_files)
-
     return icon
 
 
@@ -223,12 +222,16 @@ def main():
     elif o.pdf_file:
         o.text = read_text_from_pdf(o.pdf_file)
 
+    elif o.resume:
+        o.default_audio_file = get_audio_files_from_cache()
 
     if o.no_tray:
         if o.audio_file:
             player = AudioPlayer.from_files(o.audio_file)
         elif o.text:
             player = AudioPlayer.from_files(model.text_to_audio_files(o.text))
+        elif o.default_audio_file:
+            player = AudioPlayer.from_files(o.default_audio_file)
         else:
             parser.error("No files or text provided to play. Exiting...")
             sys.exit(1)
@@ -241,7 +244,7 @@ def main():
 
     else:
         app = create_app(model, default_audio_files=o.default_audio_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
-                        resume=o.resume, audio_files=o.audio_file, clean_cache_on_exit=o.clean_cache_on_exit)
+                        audio_files=o.audio_file, clean_cache_on_exit=o.clean_cache_on_exit)
         app.run()
 
 if __name__ == "__main__":
