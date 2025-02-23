@@ -97,7 +97,3 @@ I'm open for suggestion for other, platform-independent integrations to the OS.
 ## Roadmap
 
 Include more backends including local ones.
-
-## Hint
-
-To read whole web pages check out the excellent [unclutter](https://unclutter.it) browser extensions (reading mode).
