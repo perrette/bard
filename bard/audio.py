@@ -27,6 +27,9 @@ class AudioPlayer:
     def __init__(self, data, fs):
         if data.ndim == 1:
             data = data[:, np.newaxis]
+        # Add 0.5 seconds of silence before the data
+        silence = np.zeros((int(0.5 * fs), data.shape[1]), dtype=np.float32)
+        data = np.concatenate([silence, data], axis=0)
         self.data, self.fs = data, fs
         self.stream = None
         self.play_thread = None
