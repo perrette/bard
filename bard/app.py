@@ -213,7 +213,7 @@ def main():
     model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
 
     if o.url:
-        from bard.html import extract_text_from_url
+        from bard.input import extract_text_from_url
         o.text = extract_text_from_url(o.url)
 
     elif o.html_file:

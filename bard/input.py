@@ -46,6 +46,7 @@ def extract_text_from_filepath(filepath):
         return open(filepath).read()
 
 def extract_text_from_url(url):
+    from bard.html import extract_text_from_html
     try:
         response = requests.get(url)
     except requests.exceptions.MissingSchema:
@@ -59,7 +60,6 @@ def extract_text_from_url(url):
             resp = s.get('file:///path/to/file')
             return extract_text_from_html(resp.content)
 
-    from bard.html import extract_text_from_html
     return extract_text_from_html(response.content)
 
 def preprocess_input_text(text):
