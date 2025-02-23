@@ -24,6 +24,14 @@ def read_audio_with_pydub(filename):
     return samples, audio.frame_rate
 
 
+def read_audio(filename):
+    try:
+        data, fs = sf.read(filename, dtype='float32')  # Load file into memory
+    except sf.LibsndfileError:
+        data, fs = read_audio_with_pydub(filename)
+    return data, fs
+
+
 class AudioPlayer:
     def __init__(self, data, fs, filepaths=None):
         if data.ndim == 1:
@@ -45,10 +53,7 @@ class AudioPlayer:
     @classmethod
     def from_file(cls, filename):
         print("Loading file:", filename)
-        try:
-            data, fs = sf.read(filename, dtype='float32')  # Load file into memory
-        except sf.LibsndfileError:
-            data, fs = read_audio_with_pydub(filename)
+        data, fs = read_audio(filename)
         return cls(data, fs, filepaths=[filename])
 
     def on_done(self, callback):
@@ -152,7 +157,7 @@ class AudioPlayer:
 
     def append_file(self, filename):
         """ Append new data from a file to the end of the track """
-        data, fs = sf.read(filename, dtype='float32')
+        data, fs = read_audio(filename)
         if fs != self.fs:
             raise ValueError("Sample rate of file does not match current track")
         self.append_data(data)
