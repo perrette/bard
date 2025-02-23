@@ -53,7 +53,11 @@ def extract_text_from_url(url):
         response = requests.get(url)
     except requests.exceptions.InvalidSchema:
         if url.startswith("file://"):
-            return extract_text_from_filepath(url[7:])
+            from requests_file import FileAdapter
+            s = requests.Session()
+            s.mount('file://', FileAdapter())
+            resp = s.get('file:///path/to/file')
+            return extract_text_from_html(resp.content)
 
     from bard.html import extract_text_from_html
     return extract_text_from_html(response.content)
