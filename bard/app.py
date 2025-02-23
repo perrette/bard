@@ -32,8 +32,7 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
             icon._audioplayer.stop()
             icon._audioplayer = None
         try:
-            icon._audioplayer = AudioPlayer.from_files(icon._model.text_to_audio_files(text),
-                                                       callback_loop=lambda player: player.play())
+            icon._audioplayer = AudioPlayer.from_files(icon._model.text_to_audio_files(text))
             icon._audioplayer.on_done(lambda x: icon.update_menu()).play()
             logger.info('Done!')
         finally:
@@ -229,7 +228,7 @@ def main():
         if o.audio_file:
             player = AudioPlayer.from_files(o.audio_file)
         elif o.text:
-            player = AudioPlayer.from_files(model.text_to_audio_files(o.text), callback_loop=lambda player: player.play())
+            player = AudioPlayer.from_files(model.text_to_audio_files(o.text))
         else:
             parser.error("No files or text provided to play. Exiting...")
             sys.exit(1)
