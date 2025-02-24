@@ -96,7 +96,7 @@ I'm open for suggestion for other, platform-independent integrations to the OS.
 
 I was able to install bard on Android via the excellent Termux emulator. Not everything works: the tray system app does not work, the clipboard option does not work. However I could obtain a decent workflow via
 ```bash
-bard --no-tray --text-clipboard "$(termux-clipboard-get)"
+bard --no-tray --clipboard-text "$(termux-clipboard-get)"
 ```
 Formatted text is not copied, and Android 's apps dont let you download the the html like on Desktop. So for paywalled articles I end up opening them in Firefox, acessing the Reading mode (excellent), select all text and running the above command.
 
