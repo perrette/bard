@@ -6,8 +6,7 @@ import re
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
 from bard.util import logger, clean_cache, CACHE_DIR
-from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard, set_text_to_clipboard
-from bard.frontends.trayicon import create_app
+from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
     if backend == "openaiapi":
