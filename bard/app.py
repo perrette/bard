@@ -1,5 +1,4 @@
 import os
-import subprocess as sp
 import sys
 from pathlib import Path
 import re
@@ -9,7 +8,7 @@ import pyperclip
 import bard_data
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
-from bard.util import logger, clean_cache as _clean_cache, CACHE_DIR, is_running_in_termux
+from bard.util import logger, clean_cache as _clean_cache, CACHE_DIR
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
@@ -262,7 +261,12 @@ def main():
     else:
         app = create_app(model, default_audio_files=o.default_audio_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
                         audio_files=o.audio_file, clean_cache_on_exit=o.clean_cache_on_exit, external_player=o.external_player)
-        app.run()
+
+        try:
+            app.run()
+        finally:
+            if hasattr(app, "_audioplayer") and app._audioplayer is not None:
+                app._audioplayer.stop()
 
 if __name__ == "__main__":
     main()
