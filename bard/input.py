@@ -47,16 +47,30 @@ def extract_text_from_filepath(filepath):
 
 def extract_text_from_url(url):
     from bard.html import extract_text_from_html
+
     try:
         response = requests.get(url)
+
     except requests.exceptions.MissingSchema:
         url = "https://" + url
         response = requests.get(url)
+
     except requests.exceptions.InvalidSchema:
         if url.startswith("file://"):
             from urllib.request import url2pathname
             filepath = url2pathname(url[7:])
             return extract_text_from_filepath(filepath)
+
+    content_type = response.headers.get('content-type')
+
+    if content_type and 'application/pdf' in content_type:
+        tmpfile = os.path.join(CACHE_DIR, "pdfs", os.path.basename(url))
+        os.makedirs(os.path.dirname(tmpfile), exist_ok=True)
+        with open(tmpfile, "wb") as f:
+            f.write(response.content)
+        pdf = read_text_from_pdf(tmpfile)
+        os.remove(tmpfile)
+        return pdf
 
     return extract_text_from_html(response.content)
 
