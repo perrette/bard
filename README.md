@@ -59,7 +59,8 @@ bard --pdf-file /path/to/document.pdf  # careful if you pay for it... (the full 
 bard --audio-file /path/to/audio.mp3 # no actual request, only useful for testing the audio player
 ```
 The above command will still launch the system tray icon, and so provide access to the audio player's (basic) controls.
-If you wish to just read aloud without the icon tray app, you may add the `--no-tray` parameter.
+There is also a terminal version via the `--no-tray` parameter, with the same elementary controls as in the system tray.
+And for a one-off execution of the program without controls, use `--no-prompt`.
 
 The clipboard parsing capabilities are elaborate enough so that it can detect an URL, a file path or common HTML markup.
 If a file path is detected, the extension is checked for `.html`-ish and `.pdf`, and the data is extracted accordingly.
@@ -89,8 +90,8 @@ You can set that smaller or up to the maximum allowed by the openai API (4096).
 ## Player
 
 The player was devised in conversation with Mistral's Le Chat and Open AI's Chat GPT, and my own experience with `pystray` on [scribe](https://github.com/perrette/scribe). It works.
-
 I'm open for suggestion for other, platform-independent integrations to the OS.
+TODO: I want to add a functioning "Open with external reader" option. At the moment it is experimental and only accounts for the first file.
 
 ## Android
 
