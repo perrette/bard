@@ -12,3 +12,6 @@ CACHE_DIR = os.path.join(XDG_CACHE_HOME, 'bard')
 def clean_cache():
     logger.info(f"Cleaning cache directory: {CACHE_DIR}")
     shutil.rmtree(CACHE_DIR)
+
+def is_running_in_termux():
+    return os.environ.get('PREFIX') == '/data/data/com.termux/files/usr'

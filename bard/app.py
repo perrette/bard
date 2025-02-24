@@ -1,4 +1,5 @@
 import os
+import subprocess as sp
 import sys
 from pathlib import Path
 import re
@@ -8,8 +9,8 @@ import pyperclip
 import bard_data
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
-from bard.util import logger, clean_cache as _clean_cache, CACHE_DIR
-from bard.input import read_text_from_pdf, preprocess_input_text
+from bard.util import logger, clean_cache as _clean_cache, CACHE_DIR, is_running_in_termux
+from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
     if backend == "openaiapi":
@@ -229,7 +230,8 @@ def main():
         o.text = preprocess_input_text(o.clipboard_text)
 
     elif o.clipboard:
-        o.text = preprocess_input_text(pyperclip.paste())
+        clipboard = get_text_from_clipboard()
+        o.text = preprocess_input_text(clipboard)
 
     elif o.pdf_file:
         o.text = read_text_from_pdf(o.pdf_file)

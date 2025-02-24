@@ -64,7 +64,7 @@ If you wish to just read aloud without the icon tray app, you may add the `--no-
 The clipboard parsing capabilities are elaborate enough so that it can detect an URL, a file path or common HTML markup.
 If a file path is detected, the extension is checked for `.html`-ish and `.pdf`, and the data is extracted accordingly.
 Here we make good use of the most useful work on [readability](https://pypi.org/project/readability-lxml).
-In particular, this allows relatively easy reading out of webpages behind paywals, by right-clicking on "View Page Source" (or download the html file if the source doesn't contain the text), select all text, copy and just proceed with bards' "Process Copied Text" or `--clipboard` options.  
+In particular, this allows relatively easy reading out of webpages behind paywals, by right-clicking on "View Page Source" (or download the html file if the source doesn't contain the text), select all text, copy and just proceed with bards' "Process Copied Text" or `--clipboard` options.
 For other articles not protected by a paywall, copying the URL should suffice.
 
 You can resume the previous recording (the audio won't play right away in this case, but you can use the reader):
@@ -94,11 +94,12 @@ I'm open for suggestion for other, platform-independent integrations to the OS.
 
 ## Android
 
-I was able to install bard on Android via the excellent Termux emulator. Not everything works: the tray system app does not work, the clipboard option does not work. However I could obtain a decent workflow via
+I was able to install bard on Android via the excellent [Termux](https://termux.dev) emulator. Not everything works: the tray system app does not work, the clipboard option only partially works (**only plain text is copied**). However I could obtain a decent workflow for one-off reading (no player controls) via:
 ```bash
-bard --no-tray --clipboard-text "$(termux-clipboard-get)"
+bard --no-tray --clipboard
 ```
-Formatted text is not copied, and Android 's apps dont let you download the the html like on Desktop. So for paywalled articles I end up opening them in Firefox, acessing the Reading mode (excellent), select all text and running the above command.
+For paywalled articles, I ended up opening them in Firefox, acessing the Reading mode (excellent, though sometimes the icon is hidden in the URL bar), selecting all text, copying, and running the above command (for free articles just copy paste the URL). This requires the termux API `pkg install termux-api`.
+
 
 ## Roadmap
 

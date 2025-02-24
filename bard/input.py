@@ -1,8 +1,15 @@
 import os
 import subprocess
 import requests
-from bard.util import logger, CACHE_DIR
+import pyperclip
+from bard.util import logger, CACHE_DIR, is_running_in_termux
 
+def get_text_from_clipboard():
+    if is_running_in_termux:
+        clipboard = subprocess.check_call(["termux-clipboard-get"])
+    else:
+        clipboard = pyperclip.paste()
+    return clipboard
 
 def pdftotext(pdf_path, text_path):
     # Call pdftotext using subprocess
