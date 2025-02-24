@@ -6,7 +6,7 @@ from bard.util import logger, CACHE_DIR, is_running_in_termux
 
 def get_text_from_clipboard():
     if is_running_in_termux:
-        clipboard = subprocess.check_call(["termux-clipboard-get"])
+        clipboard = subprocess.check_output(["termux-clipboard-get"]).decode("utf-8")
     else:
         clipboard = pyperclip.paste()
     return clipboard
