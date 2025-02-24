@@ -57,7 +57,7 @@ def extract_text_from_url(url):
             from requests_file import FileAdapter
             s = requests.Session()
             s.mount('file://', FileAdapter())
-            resp = s.get('file:///path/to/file')
+            resp = s.get(url)
             return extract_text_from_html(resp.content)
 
     return extract_text_from_html(response.content)
