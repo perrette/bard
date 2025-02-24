@@ -48,6 +48,8 @@ class AudioPlayer:
         self.is_streaming = False
         self.lock = threading.Lock()
         self._done_callback = None
+        self._playing_callback = None
+        self._position_callback = None
         self.filepaths = [str(f) for f in filepaths] or []
 
     @classmethod
@@ -58,6 +60,16 @@ class AudioPlayer:
 
     def on_done(self, callback):
         self._done_callback = callback
+        return self
+
+    def on_playing(self, callback):
+        with self.lock:
+            self._playing_callback = callback
+        return self
+
+    def on_cursor_update(self, callback):
+        with self.lock:
+            self._position_callback = callback
         return self
 
     @property
@@ -98,7 +110,11 @@ class AudioPlayer:
     def _wait_for_completion(self):
         """ Keep thread alive until playback completes """
         while self.is_playing and self.current_position < len(self.data):
-            print(f"Playing: {self.current_position}/{len(self.data)} samples ({self.current_position / self.fs:.2f} sec)")
+            # print(f"Playing: {self.current_position}/{len(self.data)} samples ({self.current_position / self.fs:.2f} sec)", end="")
+            if self._playing_callback:
+                self._playing_callback(self)
+            if self._position_callback:
+                self._position_callback(self)
             time.sleep(1)
         if self.current_position >= len(self.data):
             self.is_playing = False  # Auto-pause instead of stopping
@@ -128,6 +144,8 @@ class AudioPlayer:
         """ Reset position after stop """
         with self.lock:
             self.current_position = 0
+        if self._position_callback:
+            self._position_callback(self)
 
     def jump_to(self, seconds):
         """ Jump to a specific time (in seconds) in the track """
@@ -141,6 +159,7 @@ class AudioPlayer:
             print(f"Jumping to: {seconds:.2f} sec, {new_position}/{len(self.data)} samples")
 
         self.current_position = new_position  # Set new position
+
         if self.is_playing:
             self.pause()  # Pause before seeking
             time.sleep(0.1)  # Ensure buffer clears
@@ -149,6 +168,10 @@ class AudioPlayer:
         else:
             if self.is_done and self._done_callback:
                 self._done_callback(self)
+
+        if self._position_callback:
+            self._position_callback(self)
+
 
     def append_data(self, data):
         """ Append new data to the end of the track """

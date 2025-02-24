@@ -11,6 +11,12 @@ def get_text_from_clipboard():
         clipboard = pyperclip.paste()
     return clipboard
 
+def set_text_to_clipboard(text):
+    if is_running_in_termux():
+        subprocess.check_call(["termux-clipboard-set", text])
+    else:
+        pyperclip.copy(text)
+
 def pdftotext(pdf_path, text_path):
     # Call pdftotext using subprocess
     result = subprocess.run(

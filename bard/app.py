@@ -6,7 +6,7 @@ import re
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
 from bard.util import logger, clean_cache, CACHE_DIR
-from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
+from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard, set_text_to_clipboard
 from bard.frontends.trayicon import create_app
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
@@ -51,18 +51,15 @@ def main():
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
 
     group = parser.add_argument_group("Frontend")
-    group.add_argument("--no-tray", action="store_true", help="Don't show the tray icon. Terminal only. At the moment this launched a one-time audio player.")
+    group.add_argument("--frontend", choices=["tray", "terminal"], default="tray", help="Frontend to use")
+    group.add_argument("--no-tray", action="store_const", dest="frontend", const="terminal", help="Alias for `--frontend terminal`")
+    group.add_argument("--no-prompt", action="store_true", help="No prompt. Also assumes `--frontend terminal`")
 
     group = parser.add_argument_group("Player")
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
     group.add_argument("--jump-forward", type=int, default=15, help="Jump forward time in seconds")
     group.add_argument("--open-external", action="store_true")
     group.add_argument("--external-player", default="xdg-open")
-
-    group = parser.add_argument_group("Player's files")
-    parser.add_argument("--default-audio-file", nargs="+", help="Default audio file(s) to pre-load in the player")
-    parser.add_argument("--resume", action="store_true", help="Resume the last played file (if --default-file is not provided)")
-    parser.add_argument("--clean-cache-on-exit", action="store_true", help="Clean the cache directory on exit")
 
     group = parser.add_argument_group("Kick-start")
     group = group.add_mutually_exclusive_group()
@@ -74,6 +71,10 @@ def main():
     group.add_argument("--url", help="URL to fetch and read along.")
     group.add_argument("--pdf-file", help="PDF File to read along (pdf2text from poppler is used).")
     group.add_argument("--audio-file", nargs="+", help="audio file(s) to play right away")
+    group.add_argument("--resume", action="store_true", help="Resume the last played file (if the cache is not cleaned)")
+
+    group = parser.add_argument_group("Maintenance")
+    parser.add_argument("--clean-cache-on-exit", action="store_true", help="Clean the cache directory on exit")
 
     o = parser.parse_args()
 
@@ -102,37 +103,55 @@ def main():
         o.text = read_text_from_pdf(o.pdf_file)
 
     elif o.resume:
-        o.default_audio_file = get_audio_files_from_cache()
+        o.audio_file = get_audio_files_from_cache()
 
-    if o.no_tray:
-        if o.audio_file:
-            player = AudioPlayer.from_files(o.audio_file)
-        elif o.text:
-            player = AudioPlayer.from_files(model.text_to_audio_files(o.text))
-        elif o.default_audio_file:
-            player = AudioPlayer.from_files(o.default_audio_file)
-        else:
+    if o.audio_file:
+        player = AudioPlayer.from_files(o.audio_file)
+
+    elif o.text:
+        player = AudioPlayer.from_files(model.text_to_audio_files(o.text))
+
+    else:
+        player = None
+
+    if o.no_prompt:
+        if player is None:
             parser.error("No files or text provided to play. Exiting...")
             sys.exit(1)
 
         if o.open_external:
             player.open_external(o.external_player)
+
         else:
-            player.play()
-            player.wait()
+            try:
+                player.play()
+                player.wait()
+
+            finally:
+                player.stop()
 
         if o.clean_cache_on_exit:
             clean_cache()
 
-    else:
-        app = create_app(model, default_audio_files=o.default_audio_file, jump_back=o.jump_back, jump_forward=o.jump_forward, text=o.text,
-                        audio_files=o.audio_file, clean_cache_on_exit=o.clean_cache_on_exit, external_player=o.external_player)
+        return 0
 
-        try:
-            app.run()
-        finally:
-            if hasattr(app, "_audioplayer") and app._audioplayer is not None:
-                app._audioplayer.stop()
+    # APP
+    if o.frontend == "tray":
+        from bard.frontends.trayicon import create_app
+    else:
+        from bard.frontends.terminal import create_app
+
+    app = create_app(model, player, jump_back=o.jump_back, jump_forward=o.jump_forward,
+                    clean_cache_on_exit=o.clean_cache_on_exit, external_player=o.external_player)
+
+    if player is not None:
+        player.play()
+
+    try:
+        app.run()
+    finally:
+        app._player.stop()
+        app.stop()
 
 if __name__ == "__main__":
     main()
