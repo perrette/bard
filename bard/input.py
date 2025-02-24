@@ -54,11 +54,9 @@ def extract_text_from_url(url):
         response = requests.get(url)
     except requests.exceptions.InvalidSchema:
         if url.startswith("file://"):
-            from requests_file import FileAdapter
-            s = requests.Session()
-            s.mount('file://', FileAdapter())
-            resp = s.get(url)
-            return extract_text_from_html(resp.content)
+            from urllib.request import url2pathname
+            filepath = url2pathname(url[7:])
+            return extract_text_from_filepath(filepath)
 
     return extract_text_from_html(response.content)
 
