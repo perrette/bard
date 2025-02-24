@@ -116,6 +116,7 @@ class AudioPlayer:
         """ Stop playback and reset position """
         with self.lock:
             self.is_playing = False
+            self.is_streaming = False # stop streaming
             self.is_stopped = True  # Indicate manual stop
         if self.stream:
             self.stream.stop()
@@ -175,15 +176,19 @@ class AudioPlayer:
 
         # Start a thread to append the remaining files
         def append_remaining_files():
+            player.is_streaming = True
             try:
                 for filename in filenames_iter:
-                    player.is_streaming = True
                     player.append_file(filename)
                     if callback_loop:
                         callback_loop(player)
+                    if not player.is_streaming:
+                        logger.info("Streaming interrupted manually.")
+                        break
             except Exception as e:
-                print(f"Error appending files: {e}")
+                logger.warning(f"Error appending files: {e}")
             finally:
+                logger.info("Done downloading files.")
                 player.is_streaming = False
                 if callback:
                     callback(player)

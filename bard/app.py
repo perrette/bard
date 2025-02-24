@@ -94,9 +94,10 @@ def create_app(model, models=[], default_audio_files=None, jump_back=15, jump_fo
 
     def callback_quit(icon, item):
         logger.info('Quitting...')
+        icon.stop()
+        icon._audioplayer.stop()
         if icon._options["clean_cache_on_exit"]:
             _clean_cache()
-        icon.stop()
 
     def callback_toggle_option(icon, item):
         icon._options[str(item)] = not icon._options[str(item)]
