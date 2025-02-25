@@ -5,7 +5,6 @@ import soundfile as sf
 import threading
 import numpy as np
 import time
-import subprocess as sp
 from bard.util import logger
 
 def read_audio_with_pydub(filename):
@@ -50,11 +49,13 @@ class AudioPlayer:
         self._done_callback = None
         self._playing_callback = None
         self._position_callback = None
+        self._callback_on_file_arrived = None
+        self._callback_on_data_arrived = None
         self.filepaths = [str(f) for f in filepaths] or []
 
     @classmethod
     def from_file(cls, filename):
-        print("Loading file:", filename)
+        logger.info(f"Loading file: {filename}")
         data, fs = read_audio(filename)
         return cls(data, fs, filepaths=[filename])
 
@@ -70,6 +71,16 @@ class AudioPlayer:
     def on_cursor_update(self, callback):
         with self.lock:
             self._position_callback = callback
+        return self
+
+    def on_file_arrived(self, callback):
+        with self.lock:
+            self._callback_on_file_arrived = callback
+        return self
+
+    def on_data_arrived(self, callback):
+        with self.lock:
+            self._callback_on_data_arrived = callback
         return self
 
     @property
@@ -178,6 +189,8 @@ class AudioPlayer:
         if data.ndim == 1:
             data = data[:, np.newaxis]
         self.data = np.concatenate([self.data, data], axis=0)
+        if self._callback_on_data_arrived:
+            self._callback_on_data_arrived(self)
 
     def append_file(self, filename):
         """ Append new data from a file to the end of the track """
@@ -186,16 +199,21 @@ class AudioPlayer:
             raise ValueError("Sample rate of file does not match current track")
         self.append_data(data)
         self.filepaths.append(str(filename))
+        if self._callback_on_file_arrived:
+            self._callback_on_file_arrived(self)
 
     @classmethod
     def from_files(cls, filenames, callback=None, callback_loop=None):
+
         # Create an iterator from the filenames list
-        print("Loading files:", filenames)
+        logger.info(f"Loading files: {filenames}")
         filenames_iter = iter(filenames)
 
         # Get the first filename and create an AudioPlayer instance
         first_filename = next(filenames_iter)
         player = cls.from_file(first_filename)
+        if callback_loop:
+            player.on_file_arrived(callback_loop)
 
         # Start a thread to append the remaining files
         def append_remaining_files():
@@ -203,8 +221,6 @@ class AudioPlayer:
             try:
                 for filename in filenames_iter:
                     player.append_file(filename)
-                    if callback_loop:
-                        callback_loop(player)
                     if not player.is_streaming:
                         logger.info("Streaming interrupted manually.")
                         break
@@ -233,14 +249,6 @@ class AudioPlayer:
             logger.debug("player waiting for append/streaming thread")
             self._append_thread.join()
 
-    def open_external(self, external_player=None):
-        if external_player is None:
-            external_player = "xdg-open"
-        try:
-            sp.check_call(f"{external_player} {' '.join(self.filepaths)}", shell=True)
-        except sp.CalledProcessError:
-            sp.check_call(f"{external_player} {self.filepaths[0]}", shell=True)
-
     @property
     def total_duration(self):
         """ Duration of the record in seconds """
@@ -252,5 +260,5 @@ class AudioPlayer:
         return self.current_position / self.fs
 
     def __del__(self):
+        logger.info("player deleted")
         self.stop()
-        self.wait()

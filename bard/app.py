@@ -32,7 +32,7 @@ def main():
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
     group.add_argument("--jump-forward", type=int, default=15, help="Jump forward time in seconds")
     group.add_argument("--open-external", action="store_true")
-    group.add_argument("--external-player", default="xdg-open")
+    group.add_argument("--external-player", help="Specify the external player to use. Default is `mpv` if installed, otherwise `xdg-open` or `termux-open`.")
 
     group = parser.add_argument_group("Kick-start")
     group = group.add_mutually_exclusive_group()

@@ -1,9 +1,10 @@
 import shutil
-from bard.frontends.abstract import AbstractApp
 
 from rich.console import Console
 from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn, TimeElapsedColumn
 
+from bard.util import logger
+from bard.frontends.abstract import AbstractApp
 
 class ProgressBar:
     def __init__(self, total_duration, description="Playing"):
@@ -83,6 +84,10 @@ class Menu:
             self.choices[item.name] = item
 
     def prompt(self, app, title=None):
+
+        if getattr(app, "_player", None):
+            app.update_progress(app._player)
+
         choice = input("\nChoose an option: ")
 
         if choice in self.choices:
@@ -99,6 +104,8 @@ class Menu:
             return print(f"Invalid choice: {choice}")
 
 class TerminalView:
+    backend = "terminal"
+
     def __init__(self, menu, title="", progressbar=None):
         self.menu = menu
         self.title = title
@@ -108,23 +115,37 @@ class TerminalView:
     def run(self):
         self.is_running = True
         self.menu.is_active_menu = True
-        while self.is_running:
-            self.menu(self, None)
-            self.is_running &= (self.menu.is_active_menu is not False)
+        try:
+            while self.is_running:
+                self.menu(self, None)
+                self.is_running &= (self.menu.is_active_menu is not False)
+        except KeyboardInterrupt:
+            if getattr(self, "_player", None) and self._player.is_playing:
+                self._player.stop()
+            else:
+                self.is_running = False
 
     def stop(self):
         self.is_running = False
 
     def update_menu(self):
-        self.menu.show(self)
+        pass
+        # self.menu.show(self)
+        # if getattr(self, "_player", None):
+        #     self.update_progress(self._player)
 
     def update_progress(self, player):
-        if not self.is_running:
-            self.progressbar = None
-            return
-        if self.progressbar is None:
-            self.progressbar = ProgressBar(player.total_duration)
-        self.progressbar.update(player.current_position_seconds, player.total_duration)
+        try:
+            if not self.is_running:
+                self.progressbar = None
+                return
+            if self.progressbar is None:
+                self.progressbar = ProgressBar(player.total_duration)
+            self.progressbar.update(player.current_position_seconds, player.total_duration)
+        except Exception as e:
+            logger.error(e)
+
+
 
 # Function to clear the terminal line
 def clear_line():
@@ -162,8 +183,10 @@ def create_app(model, player, models=[], jump_back=15, jump_forward=15,
         Item('Stop', app.callback_stop, visible=app.is_processed),
         Item(f'Jump Back {jump_back} s', app.callback_jump_back, visible=app.is_processed),
         Item(f'Jump Forward {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
-        Item(f'Open with external player', app.callback_open_external, visible=lambda x: app.is_processed(x) and external_player is not None),
-        Item('Resume Last Audio', app.callback_previous_track, visible=lambda x: not app.is_processed()),
+        Item(f'Open with external player', app.callback_open_external, visible=app.is_processed),
+        Item('Previous audio', app.callback_previous_track),
+        Item('Next audio', app.callback_next_track, visible=app.is_processed),
+        Item('Delete audio', app.callback_delete_this_track, visible=app.is_processed),
         Item(f'Options', submenu_params),
         Item('Quit', app.callback_quit),
         ]

@@ -16,6 +16,10 @@ def clean_cache():
     logger.info(f"Cleaning cache directory: {CACHE_DIR}")
     shutil.rmtree(CACHE_DIR)
 
+def get_cache_path(filename):
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    return os.path.join(CACHE_DIR, filename)
+
 def is_running_in_termux():
     return os.environ.get('PREFIX') == '/data/data/com.termux/files/usr'
 
@@ -27,7 +31,8 @@ def parse_file(file):
     """
     match = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(file))
     if match:
-        return match.groups()
+        date, chunk = match.groups()
+        return date, int(chunk)
     else:
         return (None, 0) # no match
 
@@ -41,9 +46,9 @@ def get_audio_files_from_cache(index=-1):
     sort them by index {i} which may occupy more than one digit
     """
     all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
-    all_files.sort()
 
-    files_by_chunks = [list(chunks) for k, chunks in groupby(all_files, lambda x: parse_file(x)[0])]
+    sorted_files_parsed = sorted(map((lambda x: (x, parse_file(x))), all_files), key=lambda x: x[1]) # (file, (date, index))
+    files_by_chunks = [[file for file, ids in chunks] for k, chunks in groupby(sorted_files_parsed, key=lambda x: x[1][0])]
 
     if len(files_by_chunks) == 0:
         logger.error("No files found in the cache directory")
@@ -54,3 +59,12 @@ def get_audio_files_from_cache(index=-1):
     except IndexError:
         logger.error(f"Invalid index: {index}. Return last played file.")
         return files_by_chunks[-1]
+
+
+
+def is_parent_directory(potential_parent, file_path):
+    potential_parent = Path(potential_parent).resolve()
+    file_path = Path(file_path).resolve()
+
+    # Check if the potential parent is in the list of parent directories
+    return potential_parent in file_path.parents
