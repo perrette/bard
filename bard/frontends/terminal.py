@@ -1,43 +1,8 @@
 import shutil
-
-from rich.console import Console
-from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn, TimeElapsedColumn
+import datetime
 
 from bard.util import logger
 from bard.frontends.abstract import AbstractApp
-
-class ProgressBar:
-    def __init__(self, total_duration, description="Playing"):
-        self.console = Console()
-        self.total_duration = total_duration
-        self.current_position = 0
-        self.description = description
-        self.progress = Progress(
-            TextColumn(f"[progress.description]{{task.description}}"),
-            TimeElapsedColumn(),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            TimeRemainingColumn(),
-            console=self.console,
-        )
-        self.task = self.progress.add_task(self.description, total=self.total_duration)
-
-    def update(self, new_position, total_duration=None):
-        self.current_position = new_position
-        with self.progress:
-            self.progress.update(self.task, completed=self.current_position)
-
-            if total_duration is not None and total_duration != self.total_duration:
-                self.total_duration = total_duration
-                self.progress.update(self.task, total=total_duration)
-
-        self.progress.refresh()
-
-    # def __del__(self):
-    #     if self.progress is not None:
-    #         self.progress.refresh()
-    #     # self.progress.stop()
-
 
 class Item:
     def __init__(self, name, callback, checked=None, checkable=False, visible=True, help=""):
@@ -106,11 +71,10 @@ class Menu:
 class TerminalView:
     backend = "terminal"
 
-    def __init__(self, menu, title="", progressbar=None):
+    def __init__(self, menu, title=""):
         self.menu = menu
         self.title = title
         self.is_running = False
-        self.progressbar = progressbar
 
     def run(self):
         self.is_running = True
@@ -137,14 +101,19 @@ class TerminalView:
     def update_progress(self, player):
         try:
             if not self.is_running:
-                self.progressbar = None
+                print("")
                 return
-            if self.progressbar is None:
-                self.progressbar = ProgressBar(player.total_duration)
-            self.progressbar.update(player.current_position_seconds, player.total_duration)
+            # if self.progressbar is None:
+            clear_line()
+            print(f"\rPlaying {format_time(player.current_position_seconds)} / {format_time(player.total_duration)}", end="")
         except Exception as e:
             logger.error(e)
+            raise
 
+
+def format_time(seconds):
+    dt = datetime.timedelta(seconds=int(seconds))
+    return str(dt)
 
 
 # Function to clear the terminal line
