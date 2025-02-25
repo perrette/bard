@@ -1,11 +1,8 @@
-import os
 import sys
-from pathlib import Path
-import re
 
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
-from bard.util import logger, clean_cache, CACHE_DIR
+from bard.util import clean_cache, get_audio_files_from_cache
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
@@ -13,29 +10,6 @@ def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, 
         return OpenaiAPI(voice=voice, model=model, output_format=output_format, api_key=openai_api_key, max_length=chunk_size)
     else:
         raise ValueError(f"Unsupported backend: {backend}")
-
-def get_audio_files_from_cache(index=-1):
-    """
-    scan the cache directory for the most recent files
-    use the pattern f"chunk_{timestamp}_{i}.{self.output_format}"
-    e.g. chunk_2025-02-22T010457.819224_1.mp3
-    and keep only the latest timestamp
-    sort them by index {i} which may occupy more than one digit
-    """
-    all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
-    all_files.sort()
-    try:
-        last_file = all_files[index]
-        timestamp = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(last_file)).groups()[0]
-        return [f for f in all_files if f.name.startswith(f"chunk_{timestamp}")]
-    except IndexError:
-        logger.error("No files found in the cache directory")
-        return []
-    except AttributeError:
-        logger.error(f"Failed to parse the timestamp from the file name: {last_file}")
-        # only keep the last file
-        return [last_file]
-
 
 def main():
     import argparse
