@@ -40,8 +40,9 @@ keywords = [
 [project.optional-dependencies]
 app = ["PyGObject"]
 openai = ["openai"]
+terminal = ["rich"]
 html = ["beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml"]
-all = ["openai", "beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml"]
+all = ["openai", "beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml", "rich"]
 
 [project.urls]
 Homepage = "https://github.com/perrette/bard"

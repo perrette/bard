@@ -3,7 +3,6 @@ from pathlib import Path
 from PIL import Image
 from pystray import Menu, MenuItem as Item, Icon
 from bard.frontends.abstract import AbstractApp
-from bard.frontends.terminal import show_progress
 
 import bard_data
 
@@ -26,7 +25,8 @@ def create_app(model, player, models=[], jump_back=15, jump_forward=15,
         Item('Stop', app.callback_stop, visible=app.is_processed),
         Item(f'Jump Back {jump_back} s', app.callback_jump_back, visible=app.is_processed),
         Item(f'Jump Forward {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
-        Item(f'Open with external player', app.callback_open_external, visible=external_player is not None),
+        Item(f'Open with external player', app.callback_open_external, visible=lambda x: app.is_processed(x) and external_player is not None),
+        Item('Resume Last Audio', app.callback_previous_track, visible=lambda x: not app.is_processed(x)),
         Item(f'Options', Menu(
                 *(Item(name, app.callback_toggle_option, checked=app.checked)
                     for name in options if isinstance(options[name], bool)))
@@ -42,7 +42,6 @@ def create_app(model, player, models=[], jump_back=15, jump_forward=15,
     image = Image.open(data_folder / "share" / "icon.png")
 
     view = Icon('bard', icon=image, title="Bard", menu=menu)
-    view.show_progress = show_progress
     app.set_audioplayer(view, player)
 
     return view

@@ -21,7 +21,7 @@ class AbstractApp:
     def checked(self, item):
         return self.get_param(str(item))
 
-    def is_processed(self, item):
+    def is_processed(self, item=None):
         return self.audioplayer is not None
 
     def show_pause(self, item):
@@ -36,11 +36,13 @@ class AbstractApp:
 
     def set_audioplayer(self, view, player):
         view._player = self.audioplayer = player
-        self.audioplayer.on_done(lambda x: view.update_menu()).play()
-        self.audioplayer.on_cursor_update(lambda player: view.show_progress(player))
+        if player is not None:
+            self.audioplayer.on_done(lambda x: view.update_menu()).play()
+            if hasattr(view, 'update_progress'):
+                self.audioplayer.on_cursor_update(lambda player: view.update_progress(player))
         view._app = self
 
-    def callback_process_clipboard(self, view, item):
+    def callback_process_clipboard(self, view, item=None):
         self.logger.info('Processing clipboard...')
         text = get_text_from_clipboard()
         self.logger.info(f'{len(text)} characters copied')
@@ -67,7 +69,7 @@ class AbstractApp:
         finally:
             view.update_menu()
 
-    def callback_play(self, view, item):
+    def callback_play(self, view, item=None):
         if self.audioplayer is None:
             self.logger.error('No audio to play')
             return
@@ -75,29 +77,29 @@ class AbstractApp:
         self.audioplayer.on_done(lambda x: view.update_menu()).play()
         self.logger.info('Exiting callback...')
 
-    def callback_pause(self, view, item):
+    def callback_pause(self, view, item=None):
         self.logger.info('Pausing...')
         self.audioplayer.pause()
 
-    def callback_stop(self, view, item):
+    def callback_stop(self, view, item=None):
         self.logger.info('Stopping...')
         self.audioplayer.stop()
 
-    def callback_jump_back(self, view, item):
+    def callback_jump_back(self, view, item=None):
         self.logger.info('Jumping back...')
         position = self.audioplayer.current_position / self.audioplayer.fs
         print("current_position", self.audioplayer.current_position, "fs", "or", position, "seconds")
         print("jumping to", position - self.get_param("jump_back"), "(seconds)")
         self.audioplayer.jump_to(position - self.get_param("jump_back"))
 
-    def callback_jump_forward(self, view, item):
+    def callback_jump_forward(self, view, item=None):
         self.logger.info('Jumping forward...')
         position = self.audioplayer.current_position / self.audioplayer.fs
         print("current_position", self.audioplayer.current_position, "fs", "or", position, "seconds")
         print("jumping to", position + self.get_param("jump_forward"), "(seconds)")
         self.audioplayer.jump_to(position + self.get_param("jump_forward"))
 
-    def callback_quit(self, view, item):
+    def callback_quit(self, view, item=None):
         self.logger.info('Quitting...')
         view.stop()
         if self.audioplayer is not None:
@@ -108,9 +110,9 @@ class AbstractApp:
     def callback_toggle_option(self, view, item):
         self.set_param(str(item), not self.get_param(str(item)))
 
-    def callback_open_external(self, view, item):
+    def callback_open_external(self, view, item=None):
         self.logger.info('Opening with external player...')
         if self.audioplayer is None:
             self.logger.error('No audio to play')
             return
-        self.audioplayer.open_external(self.get_params("external_player"))
+        self.audioplayer.open_external(self.get_param("external_player"))

@@ -241,6 +241,16 @@ class AudioPlayer:
         except sp.CalledProcessError:
             sp.check_call(f"{external_player} {self.filepaths[0]}", shell=True)
 
+    @property
+    def total_duration(self):
+        """ Duration of the record in seconds """
+        return len(self.data) / self.fs
+
+    @property
+    def current_position_seconds(self):
+        """ Current position in seconds """
+        return self.current_position / self.fs
+
     def __del__(self):
         self.stop()
         self.wait()
