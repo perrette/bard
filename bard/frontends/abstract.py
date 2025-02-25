@@ -1,4 +1,4 @@
-from bard.util import logger, clean_cache
+from bard.util import logger, clean_cache, get_audio_files_from_cache
 from bard.input import preprocess_input_text, get_text_from_clipboard
 from bard.audio import AudioPlayer
 
@@ -54,6 +54,16 @@ class AbstractApp:
             player = AudioPlayer.from_files(self.model.text_to_audio_files(text))
             self.set_audioplayer(view, player)
             # self.logger.info('Done!')
+        finally:
+            view.update_menu()
+
+    def callback_previous_track(self, view, item=None):
+        self.logger.info('Previous track...')
+        self.audioplayer = None
+        try:
+            files = get_audio_files_from_cache()
+            player = AudioPlayer.from_files(files)
+            self.set_audioplayer(view, player)
         finally:
             view.update_menu()
 
