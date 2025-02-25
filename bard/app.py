@@ -146,11 +146,7 @@ def main():
     if player is not None:
         player.play()
 
-    try:
-        app.run()
-    finally:
-        app._player.stop()
-        app.stop()
+    app.run()
 
 if __name__ == "__main__":
     main()

@@ -240,3 +240,7 @@ class AudioPlayer:
             sp.check_call(f"{external_player} {' '.join(self.filepaths)}", shell=True)
         except sp.CalledProcessError:
             sp.check_call(f"{external_player} {self.filepaths[0]}", shell=True)
+
+    def __del__(self):
+        self.stop()
+        self.wait()
