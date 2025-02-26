@@ -128,15 +128,13 @@ def show_progress(player):
     print(f"Playing: {player.current_position_seconds:.2f} s / {player.total_duration:.2f} s", end="\r")
 
 
-def create_app(model, player, models=[], jump_back=15, jump_forward=15,
-               clean_cache_on_exit=False, external_player=None):
+def create_app(model, player, models=[],
+               jump_back=15, jump_forward=15, **options):
 
     options = {
-        "clean_cache_on_exit": clean_cache_on_exit,
         "jump_back": jump_back,
         "jump_forward": jump_forward,
-        "external_player": external_player,
-    }
+        **options }
 
     app = AbstractApp(model, player, options, models=models)
 

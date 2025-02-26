@@ -33,6 +33,8 @@ def main():
     group.add_argument("--jump-forward", type=int, default=15, help="Jump forward time in seconds")
     group.add_argument("--open-external", action="store_true")
     group.add_argument("--external-player", help="Specify the external player to use. Default is `mpv` if installed, otherwise `xdg-open` or `termux-open`.")
+    group.add_argument("--no-play-on-processed", action="store_false", dest="play_on_processed", help="Do not play immediately after the text has been processed (e.g. for use with external players).")
+    group.add_argument("--play-on-processed", action="store_true", help="Play immediately after the text has been processed. Default is True.")
 
     group = parser.add_argument_group("Kick-start")
     group = group.add_mutually_exclusive_group()
@@ -115,13 +117,18 @@ def main():
         return 0
 
     # APP
+    options = {
+        "clean_cache_on_exit": o.clean_cache_on_exit,
+        "external_player": o.external_player,
+        "play_on_processed": o.play_on_processed,
+    }
+
     if o.frontend == "tray":
         from bard.frontends.trayicon import create_app
     else:
         from bard.frontends.terminal import create_app
 
-    app = create_app(model, player, jump_back=o.jump_back, jump_forward=o.jump_forward,
-                    clean_cache_on_exit=o.clean_cache_on_exit, external_player=o.external_player)
+    app = create_app(model, player, jump_back=o.jump_back, jump_forward=o.jump_forward, **options)
 
     if player is not None:
         player.play()
