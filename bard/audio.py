@@ -3,9 +3,11 @@
 import sounddevice as sd
 import soundfile as sf
 import threading
+import os
+import subprocess as sp
 import numpy as np
 import time
-from bard.util import logger
+from bard.util import logger, get_cache_path
 
 def read_audio_with_pydub(filename):
     from pydub import AudioSegment
@@ -262,3 +264,46 @@ class AudioPlayer:
     def __del__(self):
         logger.info("player deleted")
         self.stop()
+
+
+    def open_external(player, external_player=None, terminal=False, termux=False):
+
+        current_position = player.current_position_seconds
+
+        if player.is_playing:
+            player.pause() # pause so streaming continue
+
+        playlist = "\n".join(player.filepaths)
+        playlist_file = get_cache_path("playlist.m3u")
+        with open(playlist_file, "w") as f:
+            f.write(playlist)
+
+        # # callback for the case streaming is going on
+        # def append_file_to_playlist(player):
+        #     file = player.filepaths[-1]
+        #     with open(playlist_file, "a") as f:
+        #         f.write("\n"+file)
+
+        # player.on_file_arrived(append_file_to_playlist)
+
+        if external_player is None:
+            candidates = ["termux-open" if termux else "xdg-open"]
+            if terminal or termux:
+                candidates.insert(0, "mpv")
+
+        else:
+            candidates = [external_player]
+
+        for candidate in candidates:
+            try:
+                logger.info(f"Try opening playlist with: {candidate}")
+                cmd = [candidate, playlist_file]
+                if candidate.split(os.path.sep)[-1] == "mpv":
+                    cmd.append(f"--start={current_position}")
+                logger.info(cmd)
+                sp.check_call(cmd)
+                return
+            except sp.CalledProcessError:
+                continue
+
+        raise ValueError("Failed to open playlist with an external player")

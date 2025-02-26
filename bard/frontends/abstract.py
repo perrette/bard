@@ -177,50 +177,11 @@ class AbstractApp:
         if self.audioplayer is None:
             self.logger.error('No audio to play')
             return
-
         player = self.audioplayer
-        current_position = player.current_position_seconds
-
-        if player.is_playing:
-            player.pause() # pause so streaming continue
-
         external_player = self.get_param("external_player")
-
-        playlist = "\n".join(player.filepaths)
-        playlist_file = get_cache_path("playlist.m3u")
-        with open(playlist_file, "w") as f:
-            f.write(playlist)
-
-        # # callback for the case streaming is going on
-        # def append_file_to_playlist(player):
-        #     file = player.filepaths[-1]
-        #     with open(playlist_file, "a") as f:
-        #         f.write("\n"+file)
-
-        # player.on_file_arrived(append_file_to_playlist)
-
-        if external_player is None:
-            candidates = ["termux-open" if is_running_in_termux() else "xdg-open"]
-            if is_running_in_terminal(view):
-                candidates.insert(0, "mpv")
-        else:
-            candidates = [external_player]
-
         self.is_externally_open = True
-
         try:
-            for candidate in candidates:
-                try:
-                    logger.info(f"Try opening playlist with: {candidate}")
-                    cmd = [candidate, playlist_file]
-                    if candidate.split(os.path.sep)[-1] == "mpv":
-                        cmd.append(f"--start={current_position}")
-                    print(cmd)
-                    sp.check_call(cmd)
-                    return
-                except sp.CalledProcessError:
-                    continue
-            logger.error("Failed to open playlist with any external player")
+            player.open_external(external_player, terminal=is_running_in_terminal(view), termux=is_running_in_termux())
         except KeyboardInterrupt:
             logger.info("External player interrupted")
         finally:

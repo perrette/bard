@@ -2,7 +2,7 @@ import sys
 
 from bard.models import OpenaiAPI
 from bard.audio import AudioPlayer
-from bard.util import clean_cache, get_audio_files_from_cache
+from bard.util import clean_cache, get_audio_files_from_cache, logger
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
@@ -93,6 +93,12 @@ def main():
             sys.exit(1)
 
         if o.open_external:
+            try:
+                player.wait()
+            except KeyboardInterrupt:
+                logger.info("Download Interrupted by user. Proceeding to play the downloaded files.")
+            finally:
+                player.stop()
             player.open_external(o.external_player)
 
         else:
