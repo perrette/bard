@@ -19,11 +19,11 @@ class AbstractApp:
         self.track_index = track_index
         self.is_externally_open = False
 
-    def set_param(self, name, value):
-        self.params[name] = value
+    def set_param(self, item, value=None):
+        self.params[str(item)] = value if value is not None else item.value
 
-    def get_param(self, name):
-        return self.params.get(name)
+    def get_param(self, item):
+        return self.params.get(str(item))
 
     def checked(self, item):
         return self.get_param(str(item))

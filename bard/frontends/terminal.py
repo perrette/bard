@@ -14,10 +14,44 @@ class Item:
         self.visible = visible if callable(visible) else lambda item: visible
 
     def __call__(self, app, item):
-        return self._callback(app, item)
+        return self._callback(app, self)
 
     def __str__(self):
         return self.name
+
+class SetValueItem(Item):
+    def __init__(self, name, callback, value=None, choices=None, type=None, **kwargs):
+        super().__init__(name, callback, **kwargs)
+        self.value = value
+        self.choices = choices
+        self.type = type
+
+    def _isvalid(self, value):
+
+        if self.type:
+            try:
+                value = self.type(value)
+            except ValueError as error:
+                print(f"Invalid type: {str(error)}")
+                return False
+
+        if self.choices and value not in self.choices:
+            print(f"Valid choices are {', '.join(map(str, self.choices))}. Got: {str(error)}")
+            return False
+
+        return True
+
+    def __call__(self, app, item):
+        self.is_active = True
+        while self.is_active:
+            value = self.value(item)
+            ans = input(f"Enter value for {self.name} (current {value}): ")
+            if not ans:
+                ans = value
+            if self._isvalid(ans):
+                self.value = lambda item: ans
+                self.is_active = False
+        return self._callback(app, item)
 
 class Menu:
     def __init__(self, items, name=None, help=""):
@@ -44,7 +78,11 @@ class Menu:
             ticked = " "
             if item.checkable and item.checked(item):
                 ticked = "✓"
-            print(f"{ticked} {count}. {item.help or item.name}")
+            if hasattr(item, "value"):
+                suffix = f"({item.value(item)})"
+            else:
+                suffix = ""
+            print(f"{ticked} {count}. {item.help or item.name} {suffix}")
             self.choices[str(count)] = item
             self.choices[item.name] = item
 
@@ -139,8 +177,10 @@ def create_app(model, player, models=[],
     app = AbstractApp(model, player, options, models=models)
 
     submenu_params = Menu([
-            *(Item(name, app.callback_toggle_option, checked=app.checked)
-                    for name in options if isinstance(options[name], bool)),
+            *(Item(name, app.callback_toggle_option, checked=app.checked) if isinstance(options[name], bool)
+              else
+              SetValueItem(name, lambda view, item: app.set_param(item.name, item.value(item)), value=app.get_param)
+              for name in options),
             Item("Done", lambda x,y=None: False) ])
 
     menu = Menu([
