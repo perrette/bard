@@ -62,6 +62,7 @@ class AbstractApp:
         try:
             player = AudioPlayer.from_files(self.model.text_to_audio_files(text))
             self.set_audioplayer(view, player)
+            player.play()  # play immediately after the first chunk arrives (this is an important feedback especially as the tray icon is static)
             # self.logger.info('Done!')
         finally:
             view.update_menu()
