@@ -46,7 +46,7 @@ class SetValueItem(Item):
         while self.is_active:
             value = self.value(item)
             ans = input(f"Enter value for {self.name} (current {value}): ")
-            if not ans:
+            if not ans.strip():
                 ans = value
             if self._isvalid(ans):
                 self.value = lambda item: ans
@@ -78,7 +78,7 @@ class Menu:
             ticked = " "
             if item.checkable and item.checked(item):
                 ticked = "✓"
-            if hasattr(item, "value"):
+            if hasattr(item, "value") and item.value(item):
                 suffix = f"({item.value(item)})"
             else:
                 suffix = ""
@@ -179,7 +179,9 @@ def create_app(model, player, models=[],
     submenu_params = Menu([
             *(Item(name, app.callback_toggle_option, checked=app.checked) if isinstance(options[name], bool)
               else
-              SetValueItem(name, lambda view, item: app.set_param(item.name, item.value(item)), value=app.get_param)
+              SetValueItem(name, lambda view, item: app.set_param(item.name, item.value(item)),
+                           value=app.get_param,
+                           type=type(options[name]) if options[name] is not None else None)
               for name in options),
             Item("Done", lambda x,y=None: False) ])
 

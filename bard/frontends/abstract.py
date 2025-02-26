@@ -20,7 +20,7 @@ class AbstractApp:
         self.is_externally_open = False
 
     def set_param(self, item, value=None):
-        self.params[str(item)] = value if value is not None else item.value
+        self.params[str(item)] = item.value if hasattr(item, "value") and value is None else value
 
     def get_param(self, item):
         return self.params.get(str(item))
