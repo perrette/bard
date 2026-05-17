@@ -24,6 +24,7 @@ def create_app(model, player, models=[], jump_back=15, jump_forward=15, **option
         Item(f'Jump Back {jump_back} s', app.callback_jump_back, visible=app.is_processed),
         Item(f'Jump Forward {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
         Item(f'Open with external player', app.callback_open_external, visible=app.is_processed),
+        Item(f'Merge chunks into one file', app.callback_merge_files, visible=app.is_processed),
         Item('Previous audio', app.callback_previous_track),
         Item('Next audio', app.callback_next_track, visible=app.is_processed),
         Item('Delete audio', app.callback_delete_this_track, visible=app.is_processed),

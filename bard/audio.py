@@ -4,10 +4,12 @@ import sounddevice as sd
 import soundfile as sf
 import threading
 import os
+import shutil
+import datetime
 import subprocess as sp
 import numpy as np
 import time
-from bard.util import logger, get_cache_path
+from bard.util import logger, get_cache_path, parse_file
 
 def read_audio_with_pydub(filename):
     from pydub import AudioSegment
@@ -250,6 +252,46 @@ class AudioPlayer:
         if self.is_streaming:
             logger.debug("player waiting for append/streaming thread")
             self._append_thread.join()
+
+    def wait_for_streaming(self):
+        """ Wait for the streaming/download thread to finish (does not block on playback) """
+        if self.is_streaming and getattr(self, "_append_thread", None):
+            logger.info("Waiting for streaming to complete before merging...")
+            self._append_thread.join()
+
+    def merge_files(self, output_path=None):
+        """ Concatenate all chunk files into a single file.
+
+        Same-codec mp3 chunks can be concatenated at the byte level — the
+        result is a valid mp3 stream playable by mpv, ffmpeg, browsers, etc.
+        For other formats this also works as long as the container tolerates
+        stream concatenation (raw pcm, opus, mostly flac); a warning is logged
+        otherwise.
+        """
+        self.wait_for_streaming()
+
+        if not self.filepaths:
+            raise ValueError("No files to merge")
+
+        if output_path is None:
+            first = self.filepaths[0]
+            date, _ = parse_file(first)
+            if date is None:
+                date = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S.%f")
+            ext = os.path.splitext(first)[1]
+            output_path = get_cache_path(f"merged_{date}{ext}")
+
+        ext = os.path.splitext(output_path)[1].lower()
+        if ext not in (".mp3", ".opus", ".flac", ".aac"):
+            logger.warning(f"Raw byte concat may not produce a valid {ext} file")
+
+        with open(output_path, "wb") as out:
+            for f in self.filepaths:
+                with open(f, "rb") as fp:
+                    shutil.copyfileobj(fp, out)
+
+        logger.info(f"Merged {len(self.filepaths)} files into {output_path}")
+        return output_path
 
     @property
     def total_duration(self):
