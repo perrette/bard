@@ -34,9 +34,10 @@ _FALLBACK_MODELS = ["eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_multilingu
 def _split_label(api_name: str, api_description: str) -> tuple[str, str]:
     name = api_name.strip()
     desc = (api_description or "").strip()
-    if " - " in name and not desc:
+    if " - " in name:
         head, tail = name.split(" - ", 1)
-        return head.strip(), tail.strip()
+        head, tail = head.strip(), tail.strip()
+        return head, desc or tail
     return name, desc
 
 
@@ -159,7 +160,7 @@ class ElevenLabsBackend(TTSBackend):
         if cached is not None:
             return cached
         from bard.backends import diskcache
-        disk = diskcache.load("elevenlabs", "voices_meta_v4", diskcache.DEFAULT_TTL_SECONDS)
+        disk = diskcache.load("elevenlabs", "voices_meta_v5", diskcache.DEFAULT_TTL_SECONDS)
         if disk is not None:
             result = []
             desc_map: dict[str, str] = {}
@@ -200,7 +201,7 @@ class ElevenLabsBackend(TTSBackend):
             self._descriptions = desc_map
             self._categories = cat_map
             self._tiers = tier_map
-            diskcache.save("elevenlabs", "voices_meta_v4", [
+            diskcache.save("elevenlabs", "voices_meta_v5", [
                 {"id": v.id, "language": v.language, "gender": v.gender,
                  "display": v.display, "description": desc_map.get(v.id, ""),
                  "category": cat_map.get(v.id), "tiers": tier_map.get(v.id, [])}
