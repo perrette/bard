@@ -1,3 +1,5 @@
+import logging
+import threading
 from pathlib import Path
 
 from PIL import Image
@@ -6,6 +8,27 @@ from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 
 import bard_data
+
+_trayicon_logger = logging.getLogger(__name__)
+
+
+def show_error_dialog(title: str, message: str) -> None:
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+    except Exception as exc:
+        _trayicon_logger.error(f"tkinter unavailable, cannot show dialog: {exc}")
+        return
+
+    def _show():
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        messagebox.showerror(title, message, master=root)
+        root.destroy()
+
+    t = threading.Thread(target=_show, daemon=True)
+    t.start()
 
 
 _FLAGS = {
@@ -41,7 +64,7 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
         **options,
     }
 
-    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, api_keys=api_keys)
+    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, api_keys=api_keys, error_callback=show_error_dialog)
 
     def _make_backend_label(name):
         locality = "local" if BACKENDS[name].is_local else "remote"
