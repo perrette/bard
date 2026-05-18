@@ -9,7 +9,7 @@ import datetime
 import subprocess as sp
 import numpy as np
 import time
-from bard.util import logger, get_cache_path, parse_file
+from bard.util import logger, get_cache_path, parse_file, is_parent_directory
 
 def read_audio_with_pydub(filename):
     from pydub import AudioSegment
@@ -207,7 +207,7 @@ class AudioPlayer:
             self._callback_on_file_arrived(self)
 
     @classmethod
-    def from_files(cls, filenames, callback=None, callback_loop=None):
+    def from_files(cls, filenames, callback=None, callback_loop=None, auto_merge=True):
 
         # Create an iterator from the filenames list
         logger.info(f"Loading files: {filenames}")
@@ -222,17 +222,24 @@ class AudioPlayer:
         # Start a thread to append the remaining files
         def append_remaining_files():
             player.is_streaming = True
+            completed = False
             try:
                 for filename in filenames_iter:
                     player.append_file(filename)
                     if not player.is_streaming:
                         logger.info("Streaming interrupted manually.")
-                        break
+                        return
+                completed = True
             except Exception as e:
                 logger.warning(f"Error appending files: {e}")
             finally:
                 logger.info("Done downloading files.")
                 player.is_streaming = False
+                if completed and auto_merge and len(player.filepaths) > 1:
+                    try:
+                        player.merge_files(delete_sources=True)
+                    except Exception as e:
+                        logger.error(f"Auto-merge failed: {e}")
                 if callback:
                     callback(player)
 
@@ -253,13 +260,7 @@ class AudioPlayer:
             logger.debug("player waiting for append/streaming thread")
             self._append_thread.join()
 
-    def wait_for_streaming(self):
-        """ Wait for the streaming/download thread to finish (does not block on playback) """
-        if self.is_streaming and getattr(self, "_append_thread", None):
-            logger.info("Waiting for streaming to complete before merging...")
-            self._append_thread.join()
-
-    def merge_files(self, output_path=None):
+    def merge_files(self, output_path=None, delete_sources=False):
         """ Concatenate all chunk files into a single file.
 
         Same-codec mp3 chunks can be concatenated at the byte level — the
@@ -267,14 +268,20 @@ class AudioPlayer:
         For other formats this also works as long as the container tolerates
         stream concatenation (raw pcm, opus, mostly flac); a warning is logged
         otherwise.
-        """
-        self.wait_for_streaming()
 
+        When delete_sources is True, the original chunk files are removed (only
+        if they live inside the cache directory) and self.filepaths is
+        replaced with the single merged path.
+        """
         if not self.filepaths:
             raise ValueError("No files to merge")
 
+        sources = list(self.filepaths)
+        if len(sources) == 1 and os.path.basename(sources[0]).startswith("merged_"):
+            return sources[0]
+
         if output_path is None:
-            first = self.filepaths[0]
+            first = sources[0]
             date, _ = parse_file(first)
             if date is None:
                 date = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S.%f")
@@ -286,11 +293,25 @@ class AudioPlayer:
             logger.warning(f"Raw byte concat may not produce a valid {ext} file")
 
         with open(output_path, "wb") as out:
-            for f in self.filepaths:
+            for f in sources:
                 with open(f, "rb") as fp:
                     shutil.copyfileobj(fp, out)
 
-        logger.info(f"Merged {len(self.filepaths)} files into {output_path}")
+        logger.info(f"Merged {len(sources)} files into {output_path}")
+
+        if delete_sources:
+            cache_root = get_cache_path("")
+            for f in sources:
+                if str(f) == output_path:
+                    continue
+                if not os.path.exists(f):
+                    continue
+                if not is_parent_directory(cache_root, f):
+                    logger.warning(f"Skipping {f} (outside of cache folder)")
+                    continue
+                os.remove(f)
+            self.filepaths = [output_path]
+
         return output_path
 
     @property

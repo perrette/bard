@@ -174,21 +174,6 @@ class AbstractApp:
     def callback_toggle_option(self, view, item):
         self.set_param(str(item), not self.get_param(str(item)))
 
-    def callback_merge_files(self, view, item=None):
-        self.logger.info('Merging audio chunks into a single file...')
-        if self.audioplayer is None:
-            self.logger.error('No audio to merge')
-            return
-        player = self.audioplayer
-        def do_merge():
-            try:
-                path = player.merge_files()
-                self.logger.info(f"Merged file ready: {path}")
-            except Exception as e:
-                self.logger.error(f"Merge failed: {e}")
-        import threading
-        threading.Thread(target=do_merge, daemon=True).start()
-
     def callback_open_external(self, view, item=None):
         self.logger.info('Opening with external player...')
         if self.audioplayer is None:

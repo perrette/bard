@@ -26,39 +26,45 @@ def is_running_in_termux():
 
 def parse_file(file):
     """
-    Parse the timestamp and index from the file name
-    e.g. chunk_2025-02-22T010457.819224_1.mp3
+    Parse the timestamp and index from the file name.
+    e.g. chunk_2025-02-22T010457.819224_1.mp3  -> (date, 1)
+         merged_2025-02-22T010457.819224.mp3   -> (date, -1)
     """
-    match = re.search(r'chunk_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})_(\d+)\..', str(file))
+    match = re.search(r'(?:chunk|merged)_(\d{4}-\d{2}-\d{2}T\d{6}\.\d{6})(?:_(\d+))?\..', str(file))
     if match:
         date, chunk = match.groups()
-        return date, int(chunk)
+        return date, int(chunk) if chunk is not None else -1
     else:
         return (None, 0) # no match
 
 
 def get_audio_files_from_cache(index=-1):
     """
-    scan the cache directory for the most recent files
-    use the pattern f"chunk_{timestamp}_{i}.{self.output_format}"
-    e.g. chunk_2025-02-22T010457.819224_1.mp3
-    and keep only the latest timestamp
-    sort them by index {i} which may occupy more than one digit
+    Return the files of the index-th batch in the cache, oldest-first.
+    A batch is grouped by timestamp; if a merged_<timestamp>.<ext> file
+    exists for a batch, only that file is returned (chunks are considered
+    superseded).
     """
-    all_files = list(Path(CACHE_DIR).glob("chunk_*.mp3"))
+    all_files = (list(Path(CACHE_DIR).glob("chunk_*.mp3"))
+                 + list(Path(CACHE_DIR).glob("merged_*.mp3")))
 
-    sorted_files_parsed = sorted(map((lambda x: (x, parse_file(x))), all_files), key=lambda x: x[1]) # (file, (date, index))
-    files_by_chunks = [[file for file, ids in chunks] for k, chunks in groupby(sorted_files_parsed, key=lambda x: x[1][0])]
+    sorted_files = sorted(all_files, key=parse_file)  # merged (idx=-1) sorts before chunks within a batch
 
-    if len(files_by_chunks) == 0:
+    batches = []
+    for _, group in groupby(sorted_files, key=lambda f: parse_file(f)[0]):
+        files = list(group)
+        merged = [f for f in files if f.name.startswith("merged_")]
+        batches.append(merged if merged else files)
+
+    if not batches:
         logger.error("No files found in the cache directory")
         return []
 
     try:
-        return files_by_chunks[index]
+        return batches[index]
     except IndexError:
         logger.error(f"Invalid index: {index}. Return last played file.")
-        return files_by_chunks[-1]
+        return batches[-1]
 
 
 
