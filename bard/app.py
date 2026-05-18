@@ -47,7 +47,7 @@ def main():
 
     o = parser.parse_args()
 
-    model = get_backend(o.backend, voice=o.voice, model=o.model, output_format=o.output_format, api_key=o.openai_api_key, max_length=o.chunk_size)
+    backend = get_backend(o.backend, voice=o.voice, model=o.model, output_format=o.output_format, api_key=o.openai_api_key, max_length=o.chunk_size)
 
     if o.url:
         from bard.input import extract_text_from_url
@@ -78,7 +78,7 @@ def main():
         player = AudioPlayer.from_files(o.audio_file)
 
     elif o.text:
-        player = AudioPlayer.from_files(model.text_to_audio_files(o.text))
+        player = AudioPlayer.from_files(backend.text_to_audio_files(o.text))
 
     else:
         player = None
@@ -122,7 +122,7 @@ def main():
     else:
         from bard.frontends.terminal import create_app
 
-    app = create_app(model, player, jump_back=o.jump_back, jump_forward=o.jump_forward, **options)
+    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, **options)
 
     if player is not None:
         player.play()

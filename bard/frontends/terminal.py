@@ -166,7 +166,7 @@ def show_progress(player):
     print(f"Playing: {player.current_position_seconds:.2f} s / {player.total_duration:.2f} s", end="\r")
 
 
-def create_app(model, player, models=[],
+def create_app(backend, player, models=[],
                jump_back=15, jump_forward=15, **options):
 
     options = {
@@ -174,7 +174,7 @@ def create_app(model, player, models=[],
         "jump_forward": jump_forward,
         **options }
 
-    app = AbstractApp(model, player, options, models=models)
+    app = AbstractApp(backend, player, options, models=models)
 
     submenu_params = Menu([
             *(Item(name, app.callback_toggle_option, checked=app.checked) if isinstance(options[name], bool)

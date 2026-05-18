@@ -9,8 +9,8 @@ def is_running_in_terminal(view):
 
 class AbstractApp:
 
-    def __init__(self, model, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None):
-        self.model = model
+    def __init__(self, backend, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None):
+        self.backend = backend
         self.audioplayer = audioplayer
         self.params = params or {}
         self.models = models or []
@@ -60,7 +60,7 @@ class AbstractApp:
             self.audioplayer.stop()
             self.audioplayer = None
         try:
-            player = AudioPlayer.from_files(self.model.text_to_audio_files(text))
+            player = AudioPlayer.from_files(self.backend.text_to_audio_files(text))
             self.set_audioplayer(view, player)
             if self.get_param("play_on_processed"):
                 player.play()  # play immediately after the first chunk arrives

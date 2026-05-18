@@ -6,7 +6,7 @@ from bard.frontends.abstract import AbstractApp
 
 import bard_data
 
-def create_app(model, player, models=[], jump_back=15, jump_forward=15, **options):
+def create_app(backend, player, models=[], jump_back=15, jump_forward=15, **options):
 
     options = {
         "jump_back": jump_back,
@@ -14,7 +14,7 @@ def create_app(model, player, models=[], jump_back=15, jump_forward=15, **option
         **options,
     }
 
-    app = AbstractApp(model, player, options, models=models)
+    app = AbstractApp(backend, player, options, models=models)
 
     menu = Menu(
         Item('Process Copied Text', app.callback_process_clipboard),
