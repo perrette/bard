@@ -76,6 +76,7 @@ class KokoroBackend(TTSBackend):
         self.model = model
         self.lang = lang or _lang_for_voice(self.voice)
         self.speed = speed
+        self._g2p = _build_g2p(self.lang)
 
         model_path = resolve_model_path("BARD_KOKORO_MODEL_PATH", "kokoro", _DEFAULT_MODEL_FILENAME, model_path)
         voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", _DEFAULT_VOICES_FILENAME, voices_path)
@@ -92,13 +93,24 @@ class KokoroBackend(TTSBackend):
             )
 
         self._kokoro = Kokoro(str(model_path), str(voices_path))
+        # voices-v1.0.bin is an .npz archive; reading members goes through
+        # zipfile.ZipFile, which is not thread-safe. Pre-load the style vector
+        # so concurrent synthesize() calls never touch the zip.
+        self._voice_style = self._kokoro.get_voice_style(self.voice)
 
     def synthesize(self, text: str, out_path: Path) -> Path:
         import soundfile as sf
 
-        samples, sample_rate = self._kokoro.create(
-            text, voice=self.voice, speed=self.speed, lang=self.lang
-        )
+        if self._g2p is not None:
+            phonemes, _ = self._g2p(text)
+            samples, sample_rate = self._kokoro.create(
+                phonemes, voice=self._voice_style, speed=self.speed,
+                lang=self.lang, is_phonemes=True,
+            )
+        else:
+            samples, sample_rate = self._kokoro.create(
+                text, voice=self._voice_style, speed=self.speed, lang=self.lang
+            )
         sf.write(str(out_path), samples, sample_rate)
         return out_path
 
@@ -128,3 +140,22 @@ def _lang_for_voice(voice_id: str) -> str:
         if entry is not None:
             return entry[0]
     return "en-us"
+
+
+def _build_g2p(lang: str):
+    """Return a misaki G2P matching the v1.0 training pipeline, or None for English.
+
+    Kokoro v1.0 was trained against misaki's phoneme conventions, not raw
+    espeak IPA. For non-English voices the bundled kokoro_onnx tokenizer
+    produces close-but-not-quite output; routing through misaki.espeak.EspeakG2P
+    and passing is_phonemes=True matches the upstream french.py example
+    (https://github.com/thewh1teagle/kokoro-onnx/blob/main/examples/french.py).
+    English keeps the bundled path since misaki adds no value for en-us/en-gb here.
+    """
+    if lang.startswith("en"):
+        return None
+    try:
+        from misaki.espeak import EspeakG2P
+    except ImportError:
+        return None
+    return EspeakG2P(language=lang)
