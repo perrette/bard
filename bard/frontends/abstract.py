@@ -1,6 +1,7 @@
 import os
 import subprocess as sp
 from typing import Callable
+from desktop_ai_core.frontends import AbstractFrontendApp
 from bard.util import logger, clean_cache, get_audio_files_from_cache, is_running_in_termux, get_cache_path, is_parent_directory, CACHE_DIR
 from bard.chunking import render_chunks
 from bard.input import preprocess_input_text, get_text_from_clipboard
@@ -10,28 +11,17 @@ from bard.backends import get_backend
 def is_running_in_terminal(view):
     return view is None or getattr(view, "backend", None) == "terminal"
 
-class AbstractApp:
+class AbstractApp(AbstractFrontendApp):
 
     def __init__(self, backend, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None, backend_kwargs=None, api_keys=None, error_callback: Callable[[str, str], None] | None = None):
+        super().__init__(params=params, view=view, logger=logger, error_callback=error_callback)
         self.backend = backend
         self.audioplayer = audioplayer
-        self.params = params or {}
         self.models = models or []
-        self.view = view
-        self.logger = logger
         self.track_index = track_index
         self.is_externally_open = False
         self.backend_kwargs = backend_kwargs or {}
         self.api_keys = api_keys or {}
-        self.error_callback = error_callback
-
-    def notify_error(self, title: str, message: str) -> None:
-        self.logger.error(f"{title}: {message}")
-        if self.error_callback is not None:
-            try:
-                self.error_callback(title, message)
-            except Exception as cb_exc:
-                self.logger.error(f"error_callback raised: {cb_exc}")
 
     def switch_backend(self, name: str) -> bool:
         try:
@@ -51,15 +41,6 @@ class AbstractApp:
 
     def set_model(self, model_id: str) -> None:
         self.backend.model = model_id
-
-    def set_param(self, item, value=None):
-        self.params[str(item)] = item.value if hasattr(item, "value") and value is None else value
-
-    def get_param(self, item):
-        return self.params.get(str(item))
-
-    def checked(self, item):
-        return self.get_param(str(item))
 
     def is_processed(self, item=None):
         return self.audioplayer is not None
@@ -207,9 +188,6 @@ class AbstractApp:
             self.audioplayer.stop()
         if self.get_param("clean_cache_on_exit"):
             clean_cache()
-
-    def callback_toggle_option(self, view, item):
-        self.set_param(str(item), not self.get_param(str(item)))
 
     def callback_open_external(self, view, item=None):
         self.logger.info('Opening with external player...')
