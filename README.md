@@ -15,11 +15,21 @@ sudo apt install libcairo-dev libgirepository1.0-dev gir1.2-appindicator3-0.1  #
 pip install PyGObject # Ubuntu ONLY (not needed on MacOS)
 ```
 
-Install the main app with all its optional dependencies:
+Install the main app with all optional dependencies:
 
 ```bash
-pip install bard-cli[all]
+pip install bard-cli[all]          # OpenAI, ElevenLabs, Kokoro (no Piper)
+pip install bard-cli[all-local]    # all of the above + Piper
 ```
+
+You can also install individual backend extras:
+
+| Extra | Backend | Type |
+|-------|---------|------|
+| `bard-cli[openai]` | OpenAI TTS | remote (requires `OPENAI_API_KEY`) |
+| `bard-cli[elevenlabs]` | ElevenLabs | remote (requires `ELEVENLABS_API_KEY`) |
+| `bard-cli[kokoro]` | Kokoro | local, free, offline |
+| `bard-cli[piper]` | Piper | local, free, offline |
 
 ### GNOME
 
@@ -39,7 +49,7 @@ bard
 ```
 which defaults to:
 ```bash
-bard --backend openaiapi --voice allow --model tts-1
+bard --backend openaiapi --voice alloy --model tts-1
 ```
 (this assumes the environment variable `OPENAI_API_KEY` is defined)
 
@@ -77,6 +87,58 @@ You can ask also ask the app to removed your (local) traces:
 bard --clean-cache-on-exit
 ```
 
+## Backends
+
+Bard supports four TTS backends. Use `--backend <name>` to select one at startup:
+
+| Backend | `--backend` value | Type | Notes |
+|---------|------------------|------|-------|
+| OpenAI TTS | `openai` or `openaiapi` | remote | requires `OPENAI_API_KEY` |
+| ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` |
+| Kokoro | `kokoro` | local | free, offline, English voices |
+| Piper | `piper` | local | free, offline, multilingual |
+
+```bash
+bard --backend kokoro --voice af_sky
+bard --backend piper --voice en_US-amy-medium
+bard --backend elevenlabs --voice Rachel
+```
+
+### Listing backends and voices
+
+```bash
+# Show all registered backends with availability:
+bard --list-backends
+
+# List voice IDs for the selected backend:
+bard --backend openai --list-voices
+
+# Full metadata table (id / language / gender / model):
+bard --backend openai --list-voices --verbose
+```
+
+## Tray menu
+
+The system tray icon exposes a `TTS` submenu with three sub-submenus:
+
+```
+TTS ▸
+  Backend ▸  ● openai      (remote)
+             ○ elevenlabs  (remote)   ← greyed if API key absent
+             ○ kokoro      (local)    ← greyed if not installed
+             ○ piper       (local)    ← greyed if model file absent
+  Model   ▸  ● tts-1
+             ○ tts-1-hd
+             ○ gpt-4o-mini-tts
+  Voice   ▸  🇺🇸 alloy
+             🇺🇸 echo (M)
+             🇺🇸 nova (F)
+             ...
+```
+
+Backend and voice can be switched at runtime without restarting. The `Options`
+submenu retains its non-TTS controls (auto-play, jump interval, etc.).
+
 ## Fine-tuning
 
 ```bash
@@ -85,7 +147,7 @@ bard --chunk-size 500  # that's the default
 sets the maximum length (in characters) of a request. That means about 30 seconds of speech.
 The program will split up the text in chunks (according to the punctuation) and download them sequentially.
 The reading will start with the first chunk, that's why it is convenient to keep it small.
-You can set that smaller or up to the maximum allowed by the openai API (4096).
+You can set that smaller or up to the maximum allowed by the backend (4096 for OpenAI).
 
 ## Player
 
@@ -100,8 +162,3 @@ I was able to install bard on Android via the excellent [Termux](https://termux.
 bard --no-tray --clipboard
 ```
 For paywalled articles, I ended up opening them in Firefox, acessing the Reading mode (excellent, though sometimes the icon is hidden in the URL bar), selecting all text, copying, and running the above command (for free articles just copy paste the URL). This requires the termux API `pkg install termux-api`.
-
-
-## Roadmap
-
-Include more backends including local ones.
