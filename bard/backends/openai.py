@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from bard.backends.base import TTSBackend
+from bard.backends.base import TTSBackend, Voice
 
 
 class OpenAIBackend(TTSBackend):
@@ -36,3 +36,15 @@ class OpenAIBackend(TTSBackend):
 
     def list_voices(self) -> list[str]:
         return list(self._VOICES)
+
+    _VOICE_META = {
+        "alloy":   Voice(id="alloy",   language="en", gender=None),
+        "echo":    Voice(id="echo",    language="en", gender="male"),
+        "fable":   Voice(id="fable",   language="en", gender="male"),
+        "onyx":    Voice(id="onyx",    language="en", gender="male"),
+        "nova":    Voice(id="nova",    language="en", gender="female"),
+        "shimmer": Voice(id="shimmer", language="en", gender="female"),
+    }
+
+    def list_voices_meta(self) -> list[Voice]:
+        return [self._VOICE_META[v] for v in self._VOICES]
