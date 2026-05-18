@@ -1,5 +1,6 @@
 [![pypi](https://img.shields.io/pypi/v/bard-cli)](https://pypi.org/project/bard-cli)
 ![](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fperrette%2Fbard%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
+[![tests](https://github.com/perrette/bard/actions/workflows/tests.yml/badge.svg)](https://github.com/perrette/bard/actions/workflows/tests.yml)
 
 # Bard  <img src="https://github.com/perrette/bard/raw/main/bard_data/share/icon.png" width=48px>
 

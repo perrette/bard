@@ -7,5 +7,5 @@ bard/_version.py
 *.egg-info
 
 # Autonomous roadmap workflows (local coordination artifacts; never committed)
-workflows/
+/workflows/
 
