@@ -1,4 +1,4 @@
-from bard.backends.base import TTSBackend
+from bard.backends.base import TTSBackend, Voice
 
 BACKENDS: dict[str, type[TTSBackend]] = {}
 
@@ -22,4 +22,4 @@ BACKENDS["elevenlabs"] = ElevenLabsBackend
 from bard.backends.piper import PiperBackend  # noqa: E402
 BACKENDS["piper"] = PiperBackend
 
-__all__ = ["TTSBackend", "BACKENDS", "get_backend", "OpenAIBackend", "KokoroBackend", "ElevenLabsBackend", "PiperBackend"]
+__all__ = ["TTSBackend", "Voice", "BACKENDS", "get_backend", "OpenAIBackend", "KokoroBackend", "ElevenLabsBackend", "PiperBackend"]
