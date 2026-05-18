@@ -1,6 +1,7 @@
 import os
 import subprocess as sp
-from bard.util import logger, clean_cache, get_audio_files_from_cache, is_running_in_termux, get_cache_path, is_parent_directory
+from bard.util import logger, clean_cache, get_audio_files_from_cache, is_running_in_termux, get_cache_path, is_parent_directory, CACHE_DIR
+from bard.chunking import render_chunks
 from bard.input import preprocess_input_text, get_text_from_clipboard
 from bard.audio import AudioPlayer
 
@@ -60,7 +61,8 @@ class AbstractApp:
             self.audioplayer.stop()
             self.audioplayer = None
         try:
-            player = AudioPlayer.from_files(self.backend.text_to_audio_files(text))
+            chunk_size = self.params.get('chunk_size', 500)
+            player = AudioPlayer.from_files(render_chunks(self.backend, text, chunk_size, CACHE_DIR))
             self.set_audioplayer(view, player)
             if self.get_param("play_on_processed"):
                 player.play()  # play immediately after the first chunk arrives

@@ -2,7 +2,8 @@ import sys
 
 from bard.backends import get_backend
 from bard.audio import AudioPlayer
-from bard.util import clean_cache, get_audio_files_from_cache, logger
+from bard.chunking import render_chunks
+from bard.util import clean_cache, get_audio_files_from_cache, logger, CACHE_DIR
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def main():
@@ -78,7 +79,7 @@ def main():
         player = AudioPlayer.from_files(o.audio_file)
 
     elif o.text:
-        player = AudioPlayer.from_files(backend.text_to_audio_files(o.text))
+        player = AudioPlayer.from_files(render_chunks(backend, o.text, o.chunk_size, CACHE_DIR))
 
     else:
         player = None
@@ -115,6 +116,7 @@ def main():
         "clean_cache_on_exit": o.clean_cache_on_exit,
         "external_player": o.external_player,
         "play_on_processed": o.play_on_processed,
+        "chunk_size": o.chunk_size,
     }
 
     if o.frontend == "tray":
