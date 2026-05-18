@@ -6,6 +6,22 @@ from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 from desktop_ai_core.frontends.terminal import Item, SetValueItem, Menu
 
+
+class _DynamicItem(Item):
+    """Item whose display name is computed from a callable each time it is shown."""
+
+    def __init__(self, name_fn, callback, **kwargs):
+        super().__init__("", callback, **kwargs)
+        self._name_fn = name_fn
+
+    @property
+    def name(self):
+        return self._name_fn()
+
+    @name.setter
+    def name(self, value):
+        pass  # super().__init__ assigns self.name = ""; discard it
+
 class TerminalView:
     backend = "terminal"
 
@@ -149,19 +165,51 @@ def create_app(backend, player, models=[],
               for name in options),
             Item("Done", lambda x, y=None: False) ])
 
+    def _play_pause_label():
+        if app.audioplayer is not None and app.audioplayer.is_playing:
+            return "⏸ Pause"
+        return "▶ Play"
+
+    def _play_pause_cb(view, item=None):
+        if app.audioplayer is not None and app.audioplayer.is_playing:
+            app.callback_pause(view, item)
+        else:
+            app.callback_play(view, item)
+
+    def _seek_submenu(view, item):
+        def _seek(frac):
+            def _cb(v, i=None):
+                app.audioplayer.jump_to(app.audioplayer.total_duration * frac)
+            return _cb
+        items = [
+            Item("Beginning (0%)", _seek(0.0)),
+            Item("25%", _seek(0.25)),
+            Item("50%", _seek(0.5)),
+            Item("75%", _seek(0.75)),
+            Item("Done", lambda v, i: False),
+        ]
+        Menu(items, name="Seek")(view, None)
+
+    def _tracks_submenu(view, item):
+        items = [
+            Item("Previous", app.callback_previous_track),
+            Item("Next", app.callback_next_track, visible=app.is_processed),
+            Item("Delete", app.callback_delete_this_track, visible=app.is_processed),
+            Item("Done", lambda v, i: False),
+        ]
+        Menu(items, name="Tracks")(view, None)
+
     menu = Menu([
         Item('Process Copied Text', app.callback_process_clipboard),
-        Item('Play', app.callback_play, visible=app.show_play),
-        Item('Pause', app.callback_pause, visible=app.show_pause),
+        _DynamicItem(_play_pause_label, _play_pause_cb, visible=app.is_processed),
         Item('Stop', app.callback_stop, visible=app.is_processed),
-        Item(f'Jump Back {jump_back} s', app.callback_jump_back, visible=app.is_processed),
-        Item(f'Jump Forward {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
-        Item(f'Open with external player', app.callback_open_external, visible=app.is_processed),
-        Item('Previous audio', app.callback_previous_track),
-        Item('Next audio', app.callback_next_track, visible=app.is_processed),
-        Item('Delete audio', app.callback_delete_this_track, visible=app.is_processed),
+        Item(f'⏪ {jump_back} s', app.callback_jump_back, visible=app.is_processed),
+        Item(f'⏩ {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
+        Item('Seek', _seek_submenu, visible=app.is_processed),
+        Item('Open with external player', app.callback_open_external, visible=app.is_processed),
+        Item('Tracks', _tracks_submenu),
         Item('TTS', _tts_submenu),
-        Item(f'Options', submenu_params),
+        Item('Options', submenu_params),
         Item('Quit', app.callback_quit),
         ]
     )
