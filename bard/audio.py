@@ -39,9 +39,6 @@ class AudioPlayer:
     def __init__(self, data, fs, filepaths=None):
         if data.ndim == 1:
             data = data[:, np.newaxis]
-        # Add 0.5 seconds of silence before the data
-        silence = np.zeros((int(0.5 * fs), data.shape[1]), dtype=np.float32)
-        data = np.concatenate([silence, data], axis=0)
         self.data, self.fs = data, fs
         self.stream = None
         self.play_thread = None
@@ -61,6 +58,10 @@ class AudioPlayer:
     def from_file(cls, filename):
         logger.info(f"Loading file: {filename}")
         data, fs = read_audio(filename)
+        if data.ndim == 1:
+            data = data[:, np.newaxis]
+        silence = np.zeros((int(0.5 * fs), data.shape[1]), dtype=np.float32)
+        data = np.concatenate([silence, data], axis=0)
         return cls(data, fs, filepaths=[filename])
 
     def on_done(self, callback):
@@ -200,7 +201,12 @@ class AudioPlayer:
         """ Append new data from a file to the end of the track """
         data, fs = read_audio(filename)
         if fs != self.fs:
-            raise ValueError("Sample rate of file does not match current track")
+            from scipy.signal import resample_poly
+            import math
+            gcd = math.gcd(int(self.fs), int(fs))
+            up = int(self.fs) // gcd
+            down = int(fs) // gcd
+            data = resample_poly(data, up, down, axis=0).astype(np.float32)
         self.append_data(data)
         self.filepaths.append(str(filename))
         if self._callback_on_file_arrived:

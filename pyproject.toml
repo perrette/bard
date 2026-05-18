@@ -16,6 +16,7 @@ dependencies = [
     "numpy",
     "sounddevice",
     "soundfile",
+    "scipy",
     "tqdm",
     "pyperclip",
     "pystray",
