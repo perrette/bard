@@ -61,7 +61,8 @@ class AbstractApp(AbstractFrontendApp):
             self.audioplayer.on_done(lambda x: view.update_menu())
             if hasattr(view, 'update_progress'):
                 self.audioplayer.on_cursor_update(lambda player: view.update_progress(player))
-                self.audioplayer.on_file_arrived(lambda p: view.update_progress(p))
+            if hasattr(view, 'update_state'):
+                self.audioplayer.on_file_arrived(lambda p: view.update_state(p))
         view._app = self
 
     def callback_process_clipboard(self, view, item=None):

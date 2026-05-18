@@ -42,20 +42,13 @@ def _status_header_label(item):
     elapsed = _format_time(player.current_position_seconds)
     total = _format_time(player.total_duration)
     bar = _progress_bar(player.current_position_seconds, player.total_duration)
-    if player.is_playing:
-        icon_char = "▶"
-    elif player.is_done:
+    if player.is_done:
         icon_char = "⏹"
-    else:
+    elif player.is_playing:
         icon_char = "⏸"
+    else:
+        icon_char = "▶"
     return f"{icon_char} {elapsed} / {total}  {bar}"
-
-
-def _toggle_label(item):
-    app = _app_ref[0]
-    if app is None or app.audioplayer is None:
-        return "▶ Play"
-    return "⏸ Pause" if app.audioplayer.is_playing else "▶ Play"
 
 
 def _callback_toggle(icon, item):
@@ -65,6 +58,21 @@ def _callback_toggle(icon, item):
     else:
         if app:
             app.callback_play(icon, item)
+
+
+def _update_tooltip(view, _player=None):
+    app = _app_ref[0]
+    if app is None or app.audioplayer is None:
+        view.title = "Bard"
+        return
+    p = app.audioplayer
+    if p.is_done:
+        ic = "⏹"
+    elif p.is_playing:
+        ic = "⏸"
+    else:
+        ic = "▶"
+    view.title = f"Bard  {ic} {_format_time(p.current_position_seconds)} / {_format_time(p.total_duration)}"
 
 
 def _callback_seek_fraction(frac):
@@ -203,8 +211,7 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
 
     menu = Menu(
         Item('Process Copied Text', app.callback_process_clipboard),
-        Item(_status_header_label, lambda *_: None, visible=app.is_processed),
-        Item(_toggle_label, _callback_toggle, visible=app.is_processed),
+        Item(_status_header_label, _callback_toggle, visible=app.is_processed),
         Item('⏹ Stop', app.callback_stop, visible=app.is_processed),
         Item(f'⏪ {jump_back} s', app.callback_jump_back, visible=app.is_processed),
         Item(f'⏩ {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
@@ -232,7 +239,8 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
     image = Image.open(data_folder / "share" / "icon.png")
 
     view = Icon('bard', icon=image, title="Bard", menu=menu)
-    view.update_progress = lambda _player=None: view.update_menu()
+    view.update_progress = lambda p=None: _update_tooltip(view, p)
+    view.update_state = lambda p=None: view.update_menu()
     app.set_audioplayer(view, player)
 
     return view
