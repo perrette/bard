@@ -6,7 +6,7 @@ from desktop_ai_core.providers import TTSBackend, Voice
 class OpenAIBackend(TTSBackend):
     name = "openai"
     default_voice = "alloy"
-    default_model = "tts-1"
+    default_model = "gpt-4o-mini-tts"
     output_format = "mp3"
     sample_rate = None
     supports_streaming = False
@@ -17,7 +17,7 @@ class OpenAIBackend(TTSBackend):
     # Editorial subset surfaced in menus and --list-voices. The API itself
     # accepts any TTS model id (dated snapshots like tts-1-1106 work via
     # --model), it's just that listing them all clutters the UI.
-    _MODELS = ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
+    _MODELS = ["gpt-4o-mini-tts", "tts-1", "tts-1-hd"]
 
     def __init__(self, api_key=None, voice=None, model=None, max_length=None, output_format="mp3"):
         try:
@@ -25,7 +25,7 @@ class OpenAIBackend(TTSBackend):
         except ImportError as e:
             raise ImportError("pip install bard-cli[openai]") from e
         self.client = OpenAI(api_key=api_key)
-        self.model = model or "tts-1"
+        self.model = model or self.default_model
         self.voice = voice or "alloy"
         self.output_format = output_format
         self.max_length = max_length or 4096
