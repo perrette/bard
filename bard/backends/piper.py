@@ -62,7 +62,7 @@ class PiperBackend(TTSBackend):
 
     def synthesize(self, text: str, out_path: Path) -> Path:
         with wave.open(str(out_path), "wb") as wav_file:
-            self._voice.synthesize(text, wav_file)
+            self._voice.synthesize_wav(text, wav_file)
         return out_path
 
     def list_voices(self) -> list[str]:
