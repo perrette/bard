@@ -176,6 +176,9 @@ def create_app(backend, player, models=[],
 
     app = AbstractApp(backend, player, options, models=models)
 
+    def _set_voice(view, item):
+        backend.voice = item.value(item)
+
     submenu_params = Menu([
             *(Item(name, app.callback_toggle_option, checked=app.checked) if isinstance(options[name], bool)
               else
@@ -183,6 +186,10 @@ def create_app(backend, player, models=[],
                            value=app.get_param,
                            type=type(options[name]) if options[name] is not None else None)
               for name in options),
+            SetValueItem("voice", _set_voice,
+                         value=lambda item: backend.voice,
+                         choices=backend.list_voices(),
+                         help="Voice"),
             Item("Done", lambda x,y=None: False) ])
 
     menu = Menu([

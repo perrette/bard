@@ -18,6 +18,7 @@ def main():
     group.add_argument("--openai-api-key", default=None, help="OpenAI API key")
     group.add_argument("--backend", default="openaiapi", help="Backend to use")
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
+    group.add_argument("--list-voices", action="store_true", help="List available voices for the selected backend and exit")
 
     group = parser.add_argument_group("Frontend")
     group.add_argument("--frontend", choices=["tray", "terminal"], default="tray", help="Frontend to use")
@@ -50,6 +51,11 @@ def main():
     o = parser.parse_args()
 
     backend = get_backend(o.backend, voice=o.voice, model=o.model, output_format=o.output_format, api_key=o.openai_api_key, max_length=o.chunk_size)
+
+    if o.list_voices:
+        for voice in backend.list_voices():
+            print(voice)
+        return 0
 
     if o.url:
         from bard.input import extract_text_from_url

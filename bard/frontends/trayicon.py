@@ -16,6 +16,19 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, **opti
 
     app = AbstractApp(backend, player, options, models=models)
 
+    def _make_set_voice(v):
+        def _cb(icon, item):
+            backend.voice = v
+        return _cb
+
+    def _make_voice_checked(v):
+        return lambda item: backend.voice == v
+
+    voice_items = tuple(
+        Item(v, _make_set_voice(v), checked=_make_voice_checked(v))
+        for v in backend.list_voices()
+    )
+
     menu = Menu(
         Item('Process Copied Text', app.callback_process_clipboard),
         Item('Play', app.callback_play, visible=app.show_play),
@@ -29,8 +42,9 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, **opti
         Item('Delete audio', app.callback_delete_this_track, visible=app.is_processed),
         Item(f'Options', Menu(
                 *(Item(name, app.callback_toggle_option, checked=app.checked)
-                    for name in options if isinstance(options[name], bool)))
-        ),
+                    for name in options if isinstance(options[name], bool)),
+                Item('Voice', Menu(*voice_items)),
+        )),
         Item('Quit', app.callback_quit),
     )
 
