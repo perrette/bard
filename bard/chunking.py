@@ -43,6 +43,8 @@ def split_text_into_chunks(text: str, chunk_size: int = 500) -> list[str]:
 
 
 def render_chunks(backend, text: str, chunk_size: int, cache_dir) -> Iterator[Path]:
+    # Streaming-capable backends still produce one complete file per chunk here;
+    # intra-chunk byte streaming (synthesize_stream) is a separate code path.
     chunks = split_text_into_chunks(text, chunk_size=chunk_size)
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)

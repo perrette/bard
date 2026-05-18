@@ -16,4 +16,7 @@ BACKENDS["openaiapi"] = OpenAIBackend
 from bard.backends.kokoro import KokoroBackend  # noqa: E402
 BACKENDS["kokoro"] = KokoroBackend
 
-__all__ = ["TTSBackend", "BACKENDS", "get_backend", "OpenAIBackend", "KokoroBackend"]
+from bard.backends.elevenlabs import ElevenLabsBackend  # noqa: E402
+BACKENDS["elevenlabs"] = ElevenLabsBackend
+
+__all__ = ["TTSBackend", "BACKENDS", "get_backend", "OpenAIBackend", "KokoroBackend", "ElevenLabsBackend"]
