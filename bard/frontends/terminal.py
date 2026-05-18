@@ -1,5 +1,3 @@
-import shutil
-import datetime
 import select
 import sys
 import termios
@@ -9,7 +7,6 @@ import tty
 import readchar
 from readchar import key as _key
 
-from bard.util import logger
 from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 from desktop_ai_core.frontends.terminal import Item, SetValueItem, Menu
@@ -43,41 +40,43 @@ def _playback_mode(view, app):
     saved = termios.tcgetattr(fd)
     jump_hint = app.get_param("jump_back")
     hint_line = f"[space] play/pause  [←→] ±{jump_hint} s  [↑↓] track  [del] del  [q] menu"
-
-    def _draw():
-        player = app.audioplayer
-        if player is None:
-            return
-        if player.is_playing:
-            icon = "▶"
-        elif player.is_done:
-            icon = "⏹"
-        else:
-            icon = "⏸"
-        pos = player.current_position_seconds
-        total = player.total_duration
-        line1 = f"{icon}  {_format_time(pos)} / {_format_time(total)}"
-        line2 = _progress_bar(pos, total)
-        sys.stdout.write("\033[s")
-        sys.stdout.write(f"\033[K{line1}\n")
-        sys.stdout.write(f"\033[K{line2}\n")
-        sys.stdout.write(f"\033[K{hint_line}")
-        sys.stdout.write("\033[u")
-        sys.stdout.flush()
+    first_draw = True
 
     try:
         sys.stdout.write("\033[?25l")
         sys.stdout.flush()
         tty.setcbreak(fd)
-        # Reserve 3 lines for the dashboard
-        sys.stdout.write("\n\n\n")
-        sys.stdout.write("\033[3A")
-        sys.stdout.flush()
+        # Drain any stray bytes left in stdin (e.g. echo from menu Enter key)
+        while True:
+            r, _, _ = select.select([sys.stdin], [], [], 0)
+            if not r:
+                break
+            sys.stdin.read(1)
 
         while True:
             if app.audioplayer is None:
                 break
-            _draw()
+            player = app.audioplayer
+            if player.is_done:
+                icon = "⏹"
+            elif player.is_playing:
+                icon = "⏸"
+            else:
+                icon = "▶"
+            pos = player.current_position_seconds
+            total = player.total_duration
+            line1 = f"{icon}  {_format_time(pos)} / {_format_time(total)}"
+            line2 = _progress_bar(pos, total)
+
+            if first_draw:
+                first_draw = False
+            else:
+                sys.stdout.write("\033[3A")
+            sys.stdout.write(f"\r\033[K{line1}\n")
+            sys.stdout.write(f"\r\033[K{line2}\n")
+            sys.stdout.write(f"\r\033[K{hint_line}\n")
+            sys.stdout.flush()
+
             ready, _, _ = select.select([sys.stdin], [], [], 0.25)
             if not ready:
                 continue
@@ -116,8 +115,7 @@ def _playback_mode(view, app):
                 continue
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, saved)
-        sys.stdout.write("\033[?25h")
-        sys.stdout.write("\033[3B\n")
+        sys.stdout.write("\033[?25h\n")
         sys.stdout.flush()
 
 
@@ -162,38 +160,6 @@ class TerminalView:
 
     def update_menu(self):
         pass
-        # self.menu.show(self)
-        # if getattr(self, "_player", None):
-        #     self.update_progress(self._player)
-
-    def update_progress(self, player):
-        try:
-            if not self.is_running:
-                print("")
-                return
-            # if self.progressbar is None:
-            clear_line()
-            print(f"\rPlaying {format_time(player.current_position_seconds)} / {format_time(player.total_duration)}", end="")
-        except Exception as e:
-            logger.error(e)
-            raise
-
-
-def format_time(seconds):
-    dt = datetime.timedelta(seconds=int(seconds))
-    return str(dt)
-
-
-# Function to clear the terminal line
-def clear_line():
-    # Get terminal width
-    terminal_width = shutil.get_terminal_size().columns
-    print("\r" + " " * terminal_width, end="")  # Clear the line
-    print("\r", end="")  # Return cursor to the beginning of the line
-
-def show_progress(player):
-    clear_line()
-    print(f"Playing: {player.current_position_seconds:.2f} s / {player.total_duration:.2f} s", end="\r")
 
 
 def create_app(backend, player, models=[],
@@ -280,6 +246,14 @@ def create_app(backend, player, models=[],
               for name in options),
             Item("Done", lambda x, y=None: False) ])
 
+    def _open_player(view, item=None):
+        if app.audioplayer is not None:
+            if app.audioplayer.is_done:
+                app.audioplayer.jump_to(0)
+            if not app.audioplayer.is_playing:
+                app.callback_play(view, None)
+        _playback_mode(view, app)
+
     def _callback_process_then_play(view, item=None):
         app.callback_process_clipboard(view, item)
         if app.audioplayer is not None:
@@ -310,7 +284,7 @@ def create_app(backend, player, models=[],
 
     menu = Menu([
         Item('Process Copied Text', _callback_process_then_play),
-        Item('▶ Now playing', lambda v, i=None: _playback_mode(v, app), visible=app.is_processed),
+        Item('▶ Play', _open_player, visible=app.is_processed),
         Item('Stop', app.callback_stop, visible=app.is_processed),
         Item(f'⏪ {jump_back} s', app.callback_jump_back, visible=app.is_processed),
         Item(f'⏩ {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
