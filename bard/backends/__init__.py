@@ -9,4 +9,8 @@ def get_backend(name: str, **kwargs) -> TTSBackend:
     return BACKENDS[name](**kwargs)
 
 
-__all__ = ["TTSBackend", "BACKENDS", "get_backend"]
+from bard.backends.openai import OpenAIBackend  # noqa: E402
+BACKENDS["openai"] = OpenAIBackend
+BACKENDS["openaiapi"] = OpenAIBackend
+
+__all__ = ["TTSBackend", "BACKENDS", "get_backend", "OpenAIBackend"]

@@ -1,15 +1,9 @@
 import sys
 
-from bard.models import OpenaiAPI
+from bard.backends import get_backend
 from bard.audio import AudioPlayer
 from bard.util import clean_cache, get_audio_files_from_cache, logger
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
-
-def get_model(voice=None, model=None, output_format="mp3", openai_api_key=None, backend="openaiapi", chunk_size=None):
-    if backend == "openaiapi":
-        return OpenaiAPI(voice=voice, model=model, output_format=output_format, api_key=openai_api_key, max_length=chunk_size)
-    else:
-        raise ValueError(f"Unsupported backend: {backend}")
 
 def main():
     import argparse
@@ -53,7 +47,7 @@ def main():
 
     o = parser.parse_args()
 
-    model = get_model(voice=o.voice, model=o.model, output_format=o.output_format, openai_api_key=o.openai_api_key, backend=o.backend, chunk_size=o.chunk_size)
+    model = get_backend(o.backend, voice=o.voice, model=o.model, output_format=o.output_format, api_key=o.openai_api_key, max_length=o.chunk_size)
 
     if o.url:
         from bard.input import extract_text_from_url
