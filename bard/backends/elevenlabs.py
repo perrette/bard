@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Iterator
 
-from bard.backends.base import TTSBackend
+from bard.backends.base import TTSBackend, Voice
 
 
 _DEFAULT_VOICES = {
@@ -15,6 +15,17 @@ _DEFAULT_VOICES = {
     "Josh": "TxGEqnHWrfWFTfGW9XjX",
     "Sam": "yoZ06aMxZJJ28mfd3POQ",
 }
+
+_FALLBACK_VOICES_META: list[Voice] = [
+    Voice(id="Rachel", language="en", gender="female", display="Rachel"),
+    Voice(id="Bella", language="en", gender="female", display="Bella"),
+    Voice(id="Domi", language="en", gender="female", display="Domi"),
+    Voice(id="Elli", language="en", gender="female", display="Elli"),
+    Voice(id="Adam", language="en", gender="male", display="Adam"),
+    Voice(id="Antoni", language="en", gender="male", display="Antoni"),
+    Voice(id="Josh", language="en", gender="male", display="Josh"),
+    Voice(id="Sam", language="en", gender="male", display="Sam"),
+]
 
 
 class ElevenLabsBackend(TTSBackend):
@@ -78,3 +89,20 @@ class ElevenLabsBackend(TTSBackend):
             return list(voices)
         except Exception:
             return list(_DEFAULT_VOICES.keys())
+
+    def list_voices_meta(self) -> list[Voice]:
+        cached = getattr(self, "_meta_cache", None)
+        if cached is not None:
+            return cached
+        try:
+            response = self.client.voices.get_all()
+            result = []
+            for v in response.voices:
+                labels = getattr(v, "labels", {}) or {}
+                language = labels.get("language") or labels.get("accent")
+                gender = labels.get("gender")
+                result.append(Voice(id=v.name, language=language, gender=gender, display=v.name))
+            self._meta_cache = result
+            return result
+        except Exception:
+            return list(_FALLBACK_VOICES_META)
