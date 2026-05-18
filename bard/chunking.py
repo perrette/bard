@@ -1,3 +1,4 @@
+import os
 import re
 import json
 import hashlib
@@ -5,6 +6,14 @@ import datetime
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterator
+
+
+def _max_concurrency() -> int:
+    try:
+        n = int(os.environ.get("BARD_MAX_CONCURRENCY", "4"))
+    except ValueError:
+        n = 4
+    return max(1, n)
 
 
 def split_text_into_chunks(text: str, chunk_size: int = 500) -> list[str]:
@@ -57,7 +66,7 @@ def render_chunks(backend, text: str, chunk_size: int, cache_dir) -> Iterator[Pa
     ]
     completed = []
     try:
-        with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor(max_workers=_max_concurrency()) as executor:
             futures = [
                 executor.submit(backend.synthesize, chunk, out_path)
                 for chunk, out_path in zip(chunks, out_paths)
