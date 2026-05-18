@@ -201,6 +201,9 @@ class TerminalView:
     def update_menu(self):
         pass
 
+    def update_progress(self, player):
+        pass
+
 
 def create_app(backend, player, models=[],
                jump_back=15, jump_forward=15, backend_kwargs=None, api_keys=None, **options):
