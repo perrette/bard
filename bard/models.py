@@ -1,9 +1,9 @@
 import os
-import re
 import datetime
 import tqdm
 import time
 from bard.util import logger, CACHE_DIR, clean_cache
+from bard.chunking import split_text_into_chunks
 
 class AbstractModel:
     pass
@@ -45,38 +45,7 @@ class OpenaiAPI(AbstractModel):
             time.sleep(0.1)
 
     def split_text_into_chunks(self, text, max_length):
-        # Regular expression to split text at punctuation marks
-        punctuation_marks = re.compile(r'([.!?])\s*')
-
-        # Split the text into sentences
-        sentences = punctuation_marks.split(text.strip())
-
-        # Combine sentences into chunks of up to max_length characters
-        chunks = []
-        current_chunk = []
-        current_length = 0
-
-        for i in range(0, len(sentences), 2):
-            sentence = sentences[i]
-            punctuation = sentences[i + 1] if i + 1 < len(sentences) else ""
-            sentence = sentence.strip()
-            if not sentence:
-                continue
-            sentence_length = len(sentence) + len(punctuation)
-
-            if current_length + sentence_length > max_length and current_chunk:
-                chunks.append("".join(current_chunk))
-                current_chunk = []
-                current_length = 0
-
-            current_chunk.append(sentence)
-            current_chunk.append(punctuation)
-            current_length += sentence_length
-
-        if current_chunk:
-            chunks.append("".join(current_chunk))
-
-        return chunks
+        return split_text_into_chunks(text, chunk_size=max_length)
 
     def generate_audio_file(self, text, output_file):
         response = self.client.audio.speech.create(
