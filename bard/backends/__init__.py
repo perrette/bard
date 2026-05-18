@@ -47,8 +47,8 @@ def _probe_kokoro() -> tuple[bool, str | None]:
         return False, "kokoro_onnx not installed"
     if importlib.util.find_spec("onnxruntime") is None:
         return False, "onnxruntime not installed"
-    model_path = resolve_model_path("BARD_KOKORO_MODEL_PATH", "kokoro", "kokoro-v0_19.onnx")
-    voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", "voices.bin")
+    model_path = resolve_model_path("BARD_KOKORO_MODEL_PATH", "kokoro", "kokoro-v1.0.onnx")
+    voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", "voices-v1.0.bin")
     if not model_path.exists():
         return False, f"model file not found: {model_path}"
     if not voices_path.exists():

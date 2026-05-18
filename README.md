@@ -96,11 +96,11 @@ Bard supports four TTS backends. Use `--backend <name>` to select one at startup
 |---------|------------------|------|-------|
 | OpenAI TTS | `openai` | remote | requires `OPENAI_API_KEY` (or `--openai-api-key`) |
 | ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` (or `--elevenlabs-api-key`) |
-| Kokoro | `kokoro` | local | free, offline, English voices |
+| Kokoro | `kokoro` | local | free, offline, multilingual (54 voices, 9 languages) |
 | Piper | `piper` | local | free, offline, multilingual |
 
 ```bash
-bard --backend kokoro --voice af_sky
+bard --backend kokoro --voice af_heart
 bard --backend piper --voice en_US-amy-medium
 bard --backend elevenlabs --voice Rachel
 ```
@@ -145,10 +145,10 @@ directly:
 
 ```bash
 mkdir -p ~/.local/share/kokoro
-curl -L -o ~/.local/share/kokoro/kokoro-v0_19.onnx \
-  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files/kokoro-v0_19.onnx
-curl -L -o ~/.local/share/kokoro/voices.bin \
-  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files/voices.bin
+curl -L -o ~/.local/share/kokoro/kokoro-v1.0.onnx \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+curl -L -o ~/.local/share/kokoro/voices-v1.0.bin \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
 ```
 
 `bard --list-backends` shows the install command for any local backend whose
