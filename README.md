@@ -124,6 +124,21 @@ Voice catalog: <https://huggingface.co/rhasspy/piper-voices>. Any `.onnx` files
 in the chosen directory show up under the `Voice` submenu and in
 `bard --backend piper --list-voices`.
 
+For community voices outside the official catalog (e.g. extra French voices
+hosted on HuggingFace under other users), `python -m piper.download_voices`
+will 404 — fetch the two files directly. Each Piper voice is one `.onnx`
+plus its sibling `.onnx.json`:
+
+```bash
+cd ~/.local/share/piper
+HF=https://huggingface.co/csukuangfj/vits-piper-fr_FR-miro-high/resolve/main
+curl -LO $HF/fr_FR-miro-high.onnx
+curl -LO $HF/fr_FR-miro-high.onnx.json
+```
+
+Voice switching at runtime only sees `.onnx` files sibling to the currently
+loaded voice, so keep all voices in the same directory.
+
 **Kokoro** — the upstream package has no downloader, so fetch the two files
 directly:
 
