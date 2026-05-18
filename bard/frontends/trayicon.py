@@ -99,7 +99,7 @@ def _format_voice_label(voice) -> str:
     flag = flag_for(voice.language)
     prefix = f"{flag} " if flag else ""
     suffix = f" ({voice.gender[0].upper()})" if voice.gender else ""
-    return f"{prefix}{voice.id}{suffix}"
+    return f"{prefix}{voice.display or voice.id}{suffix}"
 
 
 def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backend_kwargs=None, api_keys=None, **options):

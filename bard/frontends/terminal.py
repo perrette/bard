@@ -249,7 +249,8 @@ def create_app(backend, player, models=[],
         items = []
         for v in voices:
             parts = [x for x in (v.language, v.gender) if x is not None]
-            label = f"{v.id} [{', '.join(parts)}]" if parts else v.id
+            name = v.display or v.id
+            label = f"{name} [{', '.join(parts)}]" if parts else name
             def _cb(view, item, _vid=v.id):
                 app.set_voice(_vid)
             items.append(Item(label, _cb,
