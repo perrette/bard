@@ -6,11 +6,18 @@ import termios
 import time
 import tty
 
-from readchar import key as _key
-
 from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 from desktop_ai_core.frontends.terminal import Item, SetValueItem, Menu
+
+
+# VT/xterm escape sequences for the keys the playback dashboard reacts to.
+_KEY_ESC = "\x1b"
+_KEY_UP = "\x1b[A"
+_KEY_DOWN = "\x1b[B"
+_KEY_RIGHT = "\x1b[C"
+_KEY_LEFT = "\x1b[D"
+_KEY_DELETE = "\x1b[3~"
 
 
 _last_key_time: dict[str, float] = {}
@@ -50,7 +57,7 @@ def _read_key(fd: int, esc_timeout: float = 0.05) -> str:
     # Possible escape sequence — see if more bytes are coming
     ready, _, _ = select.select([sys.stdin], [], [], esc_timeout)
     if not ready:
-        return _key.ESC
+        return _KEY_ESC
     buf = b + os.read(fd, 1)
     if buf[1:2] != b"[":
         return buf.decode("utf-8", errors="replace")
@@ -127,7 +134,7 @@ def _playback_mode(view, app):
                     app.callback_pause(view, None)
                 else:
                     app.callback_play(view, None)
-            elif ch == _key.LEFT or ch == _key.RIGHT:
+            elif ch == _KEY_LEFT or ch == _KEY_RIGHT:
                 if app.audioplayer is None:
                     break
                 now = time.monotonic()
@@ -136,19 +143,19 @@ def _playback_mode(view, app):
                     delta = 1.0
                 else:
                     delta = float(app.get_param(
-                        "jump_back" if ch == _key.LEFT else "jump_forward"))
+                        "jump_back" if ch == _KEY_LEFT else "jump_forward"))
                 _last_key_time[ch] = now
                 pos = app.audioplayer.current_position_seconds
-                target = pos - delta if ch == _key.LEFT else pos + delta
+                target = pos - delta if ch == _KEY_LEFT else pos + delta
                 app.audioplayer.jump_to(target)
-            elif ch == _key.UP:
+            elif ch == _KEY_UP:
                 app.callback_previous_track(view, None)
-            elif ch == _key.DOWN:
+            elif ch == _KEY_DOWN:
                 app.callback_next_track(view, None)
-            elif ch == _key.DELETE:
+            elif ch == _KEY_DELETE:
                 app.callback_delete_this_track(view, None)
                 break
-            elif ch in ("q", "Q", _key.ESC):
+            elif ch in ("q", "Q", _KEY_ESC):
                 break
             else:
                 continue
