@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Iterator
 
-from bard.backends.base import TTSBackend, Voice
+from desktop_ai_core.providers import TTSBackend, Voice
 
 
 _DEFAULT_VOICES = {

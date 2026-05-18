@@ -78,7 +78,7 @@ from bard.backends.piper import PiperBackend  # noqa: E402
 register_tts("piper", PiperBackend, probe=_probe_piper)
 
 __all__ = [
-    "TTSBackend", "Voice", "BACKENDS", "get_backend",
+    "BACKENDS", "get_backend",
     "available_backends", "probe_backend",
     "OpenAIBackend", "KokoroBackend", "ElevenLabsBackend", "PiperBackend",
 ]

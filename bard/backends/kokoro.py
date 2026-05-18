@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from bard.backends.base import TTSBackend, Voice
+from desktop_ai_core.providers import TTSBackend, Voice
 from bard.backends.paths import resolve_model_path
 
 
