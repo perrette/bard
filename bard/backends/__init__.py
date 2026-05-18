@@ -1,8 +1,8 @@
 import importlib.util
 import os
-from pathlib import Path
 
 from bard.backends.base import TTSBackend, Voice
+from bard.backends.paths import resolve_model_path
 
 BACKENDS: dict[str, type[TTSBackend]] = {}
 
@@ -40,14 +40,8 @@ def probe_backend(name: str) -> tuple[bool, str | None]:
             return False, "kokoro_onnx not installed"
         if importlib.util.find_spec("onnxruntime") is None:
             return False, "onnxruntime not installed"
-        model_path = Path(
-            os.environ.get("BARD_KOKORO_MODEL_PATH")
-            or Path.home() / ".cache" / "bard" / "kokoro" / "kokoro-v0_19.onnx"
-        )
-        voices_path = Path(
-            os.environ.get("BARD_KOKORO_VOICES_PATH")
-            or Path.home() / ".cache" / "bard" / "kokoro" / "voices.bin"
-        )
+        model_path = resolve_model_path("BARD_KOKORO_MODEL_PATH", "kokoro", "kokoro-v0_19.onnx")
+        voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", "voices.bin")
         if not model_path.exists():
             return False, f"model file not found: {model_path}"
         if not voices_path.exists():
@@ -57,10 +51,7 @@ def probe_backend(name: str) -> tuple[bool, str | None]:
     if name == "piper":
         if importlib.util.find_spec("piper") is None:
             return False, "piper not installed"
-        model_path = Path(
-            os.environ.get("BARD_PIPER_MODEL")
-            or Path.home() / ".cache" / "bard" / "piper" / "en_US-amy-medium.onnx"
-        )
+        model_path = resolve_model_path("BARD_PIPER_MODEL", "piper", "en_US-amy-medium.onnx")
         if not model_path.exists():
             return False, f"model file not found: {model_path}"
         return True, None

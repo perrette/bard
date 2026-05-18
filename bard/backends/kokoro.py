@@ -1,11 +1,11 @@
-import os
 from pathlib import Path
 
 from bard.backends.base import TTSBackend, Voice
+from bard.backends.paths import resolve_model_path, search_dirs
 
 
-_DEFAULT_MODEL_PATH = Path.home() / ".cache" / "bard" / "kokoro" / "kokoro-v0_19.onnx"
-_DEFAULT_VOICES_PATH = Path.home() / ".cache" / "bard" / "kokoro" / "voices.bin"
+_DEFAULT_MODEL_FILENAME = "kokoro-v0_19.onnx"
+_DEFAULT_VOICES_FILENAME = "voices.bin"
 
 _VOICES = [
     "af",
@@ -43,18 +43,20 @@ class KokoroBackend(TTSBackend):
         self.lang = lang
         self.speed = speed
 
-        model_path = Path(model_path or os.environ.get("BARD_KOKORO_MODEL_PATH") or _DEFAULT_MODEL_PATH)
-        voices_path = Path(voices_path or os.environ.get("BARD_KOKORO_VOICES_PATH") or _DEFAULT_VOICES_PATH)
+        model_path = resolve_model_path("BARD_KOKORO_MODEL_PATH", "kokoro", _DEFAULT_MODEL_FILENAME, model_path)
+        voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", _DEFAULT_VOICES_FILENAME, voices_path)
 
         if not model_path.exists():
+            dirs = ", ".join(str(d) for d in search_dirs("kokoro"))
             raise FileNotFoundError(
                 f"Kokoro model not found at {model_path}. "
-                "Set BARD_KOKORO_MODEL_PATH or place the file at the default location."
+                f"Set BARD_KOKORO_MODEL_PATH or place {_DEFAULT_MODEL_FILENAME} in one of: {dirs}"
             )
         if not voices_path.exists():
+            dirs = ", ".join(str(d) for d in search_dirs("kokoro"))
             raise FileNotFoundError(
                 f"Kokoro voices file not found at {voices_path}. "
-                "Set BARD_KOKORO_VOICES_PATH or place the file at the default location."
+                f"Set BARD_KOKORO_VOICES_PATH or place {_DEFAULT_VOICES_FILENAME} in one of: {dirs}"
             )
 
         self._kokoro = Kokoro(str(model_path), str(voices_path))

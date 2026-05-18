@@ -1,12 +1,12 @@
-import os
 import re
 import wave
 from pathlib import Path
 
 from bard.backends.base import TTSBackend, Voice
+from bard.backends.paths import resolve_model_path, search_dirs
 
 
-_DEFAULT_MODEL_PATH = Path.home() / ".cache" / "bard" / "piper" / "en_US-amy-medium.onnx"
+_DEFAULT_VOICE_FILENAME = "en_US-amy-medium.onnx"
 
 _STEM_RE = re.compile(r"^([a-z]{2,3})(?:_([A-Z]{2,3}))?-(.+)-([^-]+)$")
 
@@ -26,11 +26,12 @@ class PiperBackend(TTSBackend):
         except ImportError as e:
             raise ImportError("pip install bard-cli[piper]") from e
 
-        model_path = Path(model_path or os.environ.get("BARD_PIPER_MODEL") or _DEFAULT_MODEL_PATH)
+        model_path = resolve_model_path("BARD_PIPER_MODEL", "piper", _DEFAULT_VOICE_FILENAME, model_path)
         if not model_path.exists():
+            dirs = ", ".join(str(d) for d in search_dirs("piper"))
             raise FileNotFoundError(
                 f"Piper model not found at {model_path}. "
-                "Set BARD_PIPER_MODEL or place the .onnx file at the default location."
+                f"Set BARD_PIPER_MODEL or place a .onnx file in one of: {dirs}"
             )
 
         self._voice = PiperVoice.load(str(model_path))
