@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 406 406">
+  <!-- Lowercase 'a' top-left, sized to match scribe -->
+  <g transform="translate(0.76 140.435) scale(0.105 -0.105)" fill="#FD8829">
+    <path d="M674 504Q562 504 505.5 466.0Q449 428 449 354Q449 286 494.5 247.5Q540 209 621 209Q722 209 791.0 281.5Q860 354 860 463V504ZM1221 639V0H860V166Q788 64 698.0 17.5Q608 -29 479 -29Q305 -29 196.5 72.5Q88 174 88 336Q88 533 223.5 625.0Q359 717 649 717H860V745Q860 830 793.0 869.5Q726 909 584 909Q469 909 370.0 886.0Q271 863 186 817V1090Q301 1118 417.0 1132.5Q533 1147 649 1147Q952 1147 1086.5 1027.5Q1221 908 1221 639Z" />
+  </g>
+  <!-- Enlarged speaker, shifted left to separate it from the waves -->
+  <path fill="#FD8829"
+        d="M 35 210 L 35 310 L 135 310 L 225 380 L 225 140 L 135 210 Z" />
+  <!-- Sound waves out of cone, scribe-style (mirrored) -->
+  <g fill="none" stroke="#FD8829" stroke-width="22" stroke-linecap="round">
+    <path d="M 275 200 Q 320 260 275 320" />
+    <path d="M 320 150 Q 380 260 320 370" />
+  </g>
+</svg>
