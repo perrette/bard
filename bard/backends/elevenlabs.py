@@ -6,25 +6,25 @@ from bard.backends.base import TTSBackend, Voice
 
 
 _DEFAULT_VOICES = {
-    "Rachel": "21m00Tcm4TlvDq8ikWAM",
-    "Adam": "pNInz6obpgDQGcFmaJgB",
-    "Antoni": "ErXwobaYiN019PkySvjV",
-    "Bella": "EXAVITQu4vr4xnSDxMaL",
-    "Domi": "AZnzlk1XvdvUeBnXmlld",
-    "Elli": "MF3mGyEYCl7XYWbV9V6O",
-    "Josh": "TxGEqnHWrfWFTfGW9XjX",
-    "Sam": "yoZ06aMxZJJ28mfd3POQ",
+    "Aria": "9BWtsMINqrJLrRacOk9x",
+    "Roger": "CwhRBWXzGAHq8TQ4Fs17",
+    "Sarah": "EXAVITQu4vr4xnSDxMaL",
+    "Laura": "FGY2WhTYpPnrIDTdsKH5",
+    "George": "JBFqnCBsd6RMkjVDRZzb",
+    "Charlie": "IKne3meq5aSn9XLyUdCD",
+    "Bill": "pqHfZKP75CvOlQylNhV4",
+    "Brian": "nPczCjzI2devNBz1zQrb",
 }
 
 _FALLBACK_VOICES_META: list[Voice] = [
-    Voice(id="Rachel", language="en", gender="female", display="Rachel"),
-    Voice(id="Bella", language="en", gender="female", display="Bella"),
-    Voice(id="Domi", language="en", gender="female", display="Domi"),
-    Voice(id="Elli", language="en", gender="female", display="Elli"),
-    Voice(id="Adam", language="en", gender="male", display="Adam"),
-    Voice(id="Antoni", language="en", gender="male", display="Antoni"),
-    Voice(id="Josh", language="en", gender="male", display="Josh"),
-    Voice(id="Sam", language="en", gender="male", display="Sam"),
+    Voice(id="Aria", language="en", gender="female", display="Aria"),
+    Voice(id="Sarah", language="en", gender="female", display="Sarah"),
+    Voice(id="Laura", language="en", gender="female", display="Laura"),
+    Voice(id="Roger", language="en", gender="male", display="Roger"),
+    Voice(id="George", language="en", gender="male", display="George"),
+    Voice(id="Charlie", language="en", gender="male", display="Charlie"),
+    Voice(id="Bill", language="en", gender="male", display="Bill"),
+    Voice(id="Brian", language="en", gender="male", display="Brian"),
 ]
 
 
@@ -33,7 +33,7 @@ _FALLBACK_MODELS = ["eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_multilingu
 
 class ElevenLabsBackend(TTSBackend):
     name = "elevenlabs"
-    default_voice = "Rachel"
+    default_voice = "Aria"
     default_model = "eleven_turbo_v2_5"
     output_format = "mp3"
     sample_rate = None
