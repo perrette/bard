@@ -232,7 +232,7 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
     image = Image.open(data_folder / "share" / "icon.png")
 
     view = Icon('bard', icon=image, title="Bard", menu=menu)
-    view.update_progress = view.update_menu
+    view.update_progress = lambda _player=None: view.update_menu()
     app.set_audioplayer(view, player)
 
     return view
