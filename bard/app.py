@@ -3,7 +3,8 @@ import sys
 from bard.backends import get_backend
 from bard.audio import AudioPlayer
 from bard.chunking import render_chunks
-from bard.util import clean_cache, get_audio_files_from_cache, logger, CACHE_DIR
+from bard.cache import get_resume_files
+from bard.util import clean_cache, logger, CACHE_DIR
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
 def main():
@@ -73,7 +74,7 @@ def main():
         o.text = read_text_from_pdf(o.pdf_file)
 
     elif o.resume:
-        o.audio_file = get_audio_files_from_cache()
+        o.audio_file = get_resume_files()
 
     if o.audio_file:
         player = AudioPlayer.from_files(o.audio_file)

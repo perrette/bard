@@ -1,4 +1,6 @@
 import re
+import json
+import hashlib
 import datetime
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -45,14 +47,32 @@ def render_chunks(backend, text: str, chunk_size: int, cache_dir) -> Iterator[Pa
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.datetime.now().isoformat().replace(':', '')
+    voice = getattr(backend, 'voice', backend.default_voice)
+    model = getattr(backend, 'model', backend.default_model)
     out_paths = [
-        cache_dir / f"chunk_{timestamp}_{backend.name}_{i}.{backend.output_format}"
+        cache_dir / f"chunk_{timestamp}_{backend.name}_{voice}_{i}.{backend.output_format}"
         for i in range(len(chunks))
     ]
-    with ThreadPoolExecutor() as executor:
-        futures = [
-            executor.submit(backend.synthesize, chunk, out_path)
-            for chunk, out_path in zip(chunks, out_paths)
-        ]
-        for future in futures:
-            yield future.result()
+    completed = []
+    try:
+        with ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(backend.synthesize, chunk, out_path)
+                for chunk, out_path in zip(chunks, out_paths)
+            ]
+            for future in futures:
+                path = future.result()
+                completed.append(path)
+                yield path
+    finally:
+        if completed:
+            manifest = {
+                'backend': backend.name,
+                'voice': voice,
+                'model': model,
+                'chunk_size': chunk_size,
+                'text_hash': hashlib.md5(text.encode()).hexdigest(),
+                'files': [str(p) for p in completed],
+            }
+            manifest_path = cache_dir / f"manifest_{timestamp}_{backend.name}_{voice}.json"
+            manifest_path.write_text(json.dumps(manifest, indent=2))
