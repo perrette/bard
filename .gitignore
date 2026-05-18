@@ -4,6 +4,8 @@ __pycache__
 build
 dist
 bard/_version.py
+*.egg-info
 
 # Autonomous roadmap workflows (local coordination artifacts; never committed)
 workflows/
+
