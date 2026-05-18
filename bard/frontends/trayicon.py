@@ -8,6 +8,7 @@ from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 
 import bard_data
+from desktop_ai_core.frontends.tray import flag_for
 
 _trayicon_logger = logging.getLogger(__name__)
 
@@ -31,26 +32,8 @@ def show_error_dialog(title: str, message: str) -> None:
     t.start()
 
 
-_FLAGS = {
-    "en-US": "🇺🇸",
-    "en-GB": "🇬🇧",
-    "fr-FR": "🇫🇷",
-    "de-DE": "🇩🇪",
-    "es-ES": "🇪🇸",
-    "it-IT": "🇮🇹",
-    "ja-JP": "🇯🇵",
-    "zh-CN": "🇨🇳",
-}
-
-
-def _flag_for(language: str | None) -> str:
-    if language is None:
-        return ""
-    return _FLAGS.get(language, "")
-
-
 def _format_voice_label(voice) -> str:
-    flag = _flag_for(voice.language)
+    flag = flag_for(voice.language)
     prefix = f"{flag} " if flag else ""
     suffix = f" ({voice.gender[0].upper()})" if voice.gender else ""
     return f"{prefix}{voice.id}{suffix}"
