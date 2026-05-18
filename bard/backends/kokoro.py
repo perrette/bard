@@ -1,3 +1,4 @@
+import threading
 from pathlib import Path
 
 from desktop_ai_core.providers import TTSBackend, Voice
@@ -77,6 +78,10 @@ class KokoroBackend(TTSBackend):
         self.lang = lang or _lang_for_voice(self.voice)
         self.speed = speed
         self._g2p = _build_g2p(self.lang)
+        # misaki.espeak.EspeakG2P wraps a single espeak-ng process; concurrent
+        # calls interleave and corrupt the line-count invariant. Synthesis is
+        # thread-safe, but the g2p call is not.
+        self._g2p_lock = threading.Lock()
 
         model_path = resolve_model_path("BARD_KOKORO_MODEL_PATH", "kokoro", _DEFAULT_MODEL_FILENAME, model_path)
         voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", _DEFAULT_VOICES_FILENAME, voices_path)
@@ -102,7 +107,8 @@ class KokoroBackend(TTSBackend):
         import soundfile as sf
 
         if self._g2p is not None:
-            phonemes, _ = self._g2p(text)
+            with self._g2p_lock:
+                phonemes, _ = self._g2p(text)
             samples, sample_rate = self._kokoro.create(
                 phonemes, voice=self._voice_style, speed=self.speed,
                 lang=self.lang, is_phonemes=True,
