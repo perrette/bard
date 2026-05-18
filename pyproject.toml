@@ -50,6 +50,7 @@ piper = ["piper-tts"]
 html = ["beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml"]
 all = ["openai", "elevenlabs", "kokoro-onnx", "onnxruntime", "soundfile", "beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml", "PyGObject"]
 all-local = ["openai", "elevenlabs", "kokoro-onnx", "onnxruntime", "soundfile", "beautifulsoup4", "requests", "lxml_html_clean", "readability-lxml", "PyGObject", "piper-tts"]
+test = ["pytest"]
 
 [project.urls]
 Homepage = "https://github.com/perrette/bard"
