@@ -1,3 +1,4 @@
+import logging
 import select
 import sys
 import termios
@@ -37,15 +38,21 @@ def _progress_bar(position: float, total: float, width: int = 24) -> str:
 def _playback_mode(view, app):
     _last_key_time.clear()
     fd = sys.stdin.fileno()
-    saved = termios.tcgetattr(fd)
+    saved_tty = termios.tcgetattr(fd)
+    saved_log_disable = logging.root.manager.disable
     jump_hint = app.get_param("jump_back")
     hint_line = f"[space] play/pause  [←→] ±{jump_hint} s  [↑↓] track  [del] del  [q] menu"
-    first_draw = True
 
     try:
-        sys.stdout.write("\033[?25l")
+        # Enter alternate screen so the menu and any concurrent log output
+        # stay isolated from the dashboard. The original screen is restored
+        # verbatim on exit.
+        sys.stdout.write("\033[?1049h\033[?25l")
         sys.stdout.flush()
         tty.setcbreak(fd)
+        # Suppress logging during the mode so background log/print noise
+        # doesn't pile up under the dashboard frame-after-frame.
+        logging.disable(logging.CRITICAL)
         # Drain any stray bytes left in stdin (e.g. echo from menu Enter key)
         while True:
             r, _, _ = select.select([sys.stdin], [], [], 0)
@@ -68,13 +75,14 @@ def _playback_mode(view, app):
             line1 = f"{icon}  {_format_time(pos)} / {_format_time(total)}"
             line2 = _progress_bar(pos, total)
 
-            if first_draw:
-                first_draw = False
-            else:
-                sys.stdout.write("\033[3A")
-            sys.stdout.write(f"\r\033[K{line1}\n")
-            sys.stdout.write(f"\r\033[K{line2}\n")
-            sys.stdout.write(f"\r\033[K{hint_line}\n")
+            # Always paint from home; clear-line on each row, then clear
+            # everything below so any stray output from background threads
+            # (audio.py print, etc.) gets wiped on the next frame.
+            sys.stdout.write("\033[H")
+            sys.stdout.write(f"\033[K{line1}\n")
+            sys.stdout.write(f"\033[K{line2}\n")
+            sys.stdout.write(f"\033[K{hint_line}")
+            sys.stdout.write("\033[J")
             sys.stdout.flush()
 
             ready, _, _ = select.select([sys.stdin], [], [], 0.25)
@@ -114,8 +122,9 @@ def _playback_mode(view, app):
             else:
                 continue
     finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, saved)
-        sys.stdout.write("\033[?25h\n")
+        logging.disable(saved_log_disable)
+        termios.tcsetattr(fd, termios.TCSADRAIN, saved_tty)
+        sys.stdout.write("\033[?25h\033[?1049l")
         sys.stdout.flush()
 
 
