@@ -168,14 +168,14 @@ def show_progress(player):
 
 
 def create_app(backend, player, models=[],
-               jump_back=15, jump_forward=15, backend_kwargs=None, **options):
+               jump_back=15, jump_forward=15, backend_kwargs=None, api_keys=None, **options):
 
     options = {
         "jump_back": jump_back,
         "jump_forward": jump_forward,
         **options }
 
-    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs)
+    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, api_keys=api_keys)
 
     def _backend_submenu(view, item):
         items = []

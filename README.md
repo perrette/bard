@@ -93,8 +93,8 @@ Bard supports four TTS backends. Use `--backend <name>` to select one at startup
 
 | Backend | `--backend` value | Type | Notes |
 |---------|------------------|------|-------|
-| OpenAI TTS | `openai` | remote | requires `OPENAI_API_KEY` |
-| ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` |
+| OpenAI TTS | `openai` | remote | requires `OPENAI_API_KEY` (or `--openai-api-key`) |
+| ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` (or `--elevenlabs-api-key`) |
 | Kokoro | `kokoro` | local | free, offline, English voices |
 | Piper | `piper` | local | free, offline, multilingual |
 

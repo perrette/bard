@@ -33,7 +33,7 @@ def _format_voice_label(voice) -> str:
     return f"{prefix}{voice.id}{suffix}"
 
 
-def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backend_kwargs=None, **options):
+def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backend_kwargs=None, api_keys=None, **options):
 
     options = {
         "jump_back": jump_back,
@@ -41,7 +41,7 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
         **options,
     }
 
-    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs)
+    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, api_keys=api_keys)
 
     def _make_backend_label(name):
         locality = "local" if BACKENDS[name].is_local else "remote"

@@ -15,7 +15,8 @@ def main():
     group.add_argument("--voice", default=None, help="Voice to use")
     group.add_argument("--model", default=None, help="Model to use")
     group.add_argument("--output-format", default="mp3", help="Output format")
-    group.add_argument("--openai-api-key", default=None, help="OpenAI API key")
+    group.add_argument("--openai-api-key", default=None, help="OpenAI API key (alternative to OPENAI_API_KEY env var)")
+    group.add_argument("--elevenlabs-api-key", default=None, help="ElevenLabs API key (alternative to ELEVENLABS_API_KEY env var)")
     group.add_argument("--backend", default="openai", help="Backend to use")
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
     group.add_argument("--list-voices", action="store_true", help="List available voices for the selected backend and exit")
@@ -63,13 +64,20 @@ def main():
                 print(f"    install: {cls.install_hint}")
         return 0
 
+    api_keys = {
+        "openai": o.openai_api_key,
+        "elevenlabs": o.elevenlabs_api_key,
+    }
+
     backend_kwargs = {
-        "api_key": o.openai_api_key,
         "output_format": o.output_format,
         "max_length": o.chunk_size,
     }
 
-    backend = get_backend(o.backend, voice=o.voice, model=o.model, **backend_kwargs)
+    init_kwargs = dict(backend_kwargs)
+    if api_keys.get(o.backend):
+        init_kwargs["api_key"] = api_keys[o.backend]
+    backend = get_backend(o.backend, voice=o.voice, model=o.model, **init_kwargs)
 
     if o.list_voices:
         if o.verbose:
@@ -158,7 +166,7 @@ def main():
     else:
         from bard.frontends.terminal import create_app
 
-    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, backend_kwargs=backend_kwargs, **options)
+    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, backend_kwargs=backend_kwargs, api_keys=api_keys, **options)
 
     if player is not None:
         player.play()
