@@ -37,7 +37,14 @@ class AbstractApp(AbstractFrontendApp):
         return True
 
     def set_voice(self, voice_id: str) -> None:
-        self.backend.voice = voice_id
+        # Backends with per-voice state (kokoro pre-loads style/g2p) override
+        # set_voice to rebuild caches; for stateless backends, mutating
+        # backend.voice is enough.
+        setter = getattr(self.backend, "set_voice", None)
+        if callable(setter):
+            setter(voice_id)
+        else:
+            self.backend.voice = voice_id
 
     def set_model(self, model_id: str) -> None:
         self.backend.model = model_id

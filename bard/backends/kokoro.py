@@ -13,12 +13,12 @@ _DEFAULT_VOICES_FILENAME = "voices-v1.0.bin"
 _LANG_BY_PREFIX = {
     "a": ("en-us", "en-US"),
     "b": ("en-gb", "en-GB"),
-    "j": ("ja", "ja"),
-    "z": ("cmn", "zh"),
-    "e": ("es", "es"),
-    "f": ("fr-fr", "fr"),
-    "h": ("hi", "hi"),
-    "i": ("it", "it"),
+    "j": ("ja", "ja-JP"),
+    "z": ("cmn", "zh-CN"),
+    "e": ("es", "es-ES"),
+    "f": ("fr-fr", "fr-FR"),
+    "h": ("hi", "hi-IN"),
+    "i": ("it", "it-IT"),
     "p": ("pt-br", "pt-BR"),
 }
 
@@ -102,6 +102,15 @@ class KokoroBackend(TTSBackend):
         # zipfile.ZipFile, which is not thread-safe. Pre-load the style vector
         # so concurrent synthesize() calls never touch the zip.
         self._voice_style = self._kokoro.get_voice_style(self.voice)
+
+    def set_voice(self, voice_id: str) -> None:
+        """Switch voice at runtime, refreshing the lang/g2p/style cache."""
+        if voice_id == self.voice:
+            return
+        self.voice = voice_id
+        self.lang = _lang_for_voice(voice_id)
+        self._g2p = _build_g2p(self.lang)
+        self._voice_style = self._kokoro.get_voice_style(voice_id)
 
     def synthesize(self, text: str, out_path: Path) -> Path:
         import soundfile as sf

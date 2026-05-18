@@ -8,7 +8,9 @@ import tty
 
 from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
+from bard.voices import group_by_language
 from desktop_ai_core.frontends.terminal import Item, SetValueItem, Menu
+from desktop_ai_core.frontends.tray import flag_for
 
 
 # VT/xterm escape sequences for the keys the playback dashboard reacts to.
@@ -260,19 +262,40 @@ def create_app(backend, player, models=[],
         items.append(Item("Done", lambda v, i: False))
         Menu(items, name="Model")(view, None)
 
+    def _voice_label(v):
+        name = v.display or v.id
+        suffix = f" ({v.gender[0].upper()})" if v.gender else ""
+        return f"{name}{suffix}"
+
+    def _voice_item(v):
+        def _cb(view, item, _vid=v.id):
+            app.set_voice(_vid)
+        label = _voice_label(v)
+        return Item(label, _cb,
+                    checkable=True,
+                    checked=lambda item, _vid=v.id: app.backend.voice == _vid,
+                    help=label)
+
     def _voice_submenu(view, item):
         voices = app.backend.list_voices_meta()
-        items = []
-        for v in voices:
-            parts = [x for x in (v.language, v.gender) if x is not None]
-            name = v.display or v.id
-            label = f"{name} [{', '.join(parts)}]" if parts else name
-            def _cb(view, item, _vid=v.id):
-                app.set_voice(_vid)
-            items.append(Item(label, _cb,
-                              checkable=True,
-                              checked=lambda item, _vid=v.id: app.backend.voice == _vid,
-                              help=label))
+        groups = group_by_language(voices)
+        # Flat menu when there's only one language — no point nesting.
+        if len(groups) <= 1:
+            items = [_voice_item(v) for v in voices]
+            items.append(Item("Done", lambda v, i: False))
+            Menu(items, name="Voice")(view, None)
+            return
+
+        def _make_lang_submenu(lang, lang_voices):
+            def _open(view, item):
+                inner = [_voice_item(v) for v in lang_voices]
+                inner.append(Item("Done", lambda v, i: False))
+                Menu(inner, name=lang or "Other")(view, None)
+            flag = flag_for(lang)
+            label = f"{flag + ' ' if flag else ''}{lang or 'Other'} ({len(lang_voices)})"
+            return Item(label, _open, help=label)
+
+        items = [_make_lang_submenu(lang, vs) for lang, vs in groups.items()]
         items.append(Item("Done", lambda v, i: False))
         Menu(items, name="Voice")(view, None)
 

@@ -186,16 +186,28 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
     def _make_voice_checked(vid):
         return lambda item: app.backend.voice == vid
 
-    def _voice_items():
-        return tuple(
-            Item(
-                _format_voice_label(v),
-                _make_voice_action(v.id),
-                checked=_make_voice_checked(v.id),
-                radio=True,
-            )
-            for v in app.backend.list_voices_meta()
+    def _voice_leaf(v):
+        return Item(
+            _format_voice_label(v),
+            _make_voice_action(v.id),
+            checked=_make_voice_checked(v.id),
+            radio=True,
         )
+
+    def _voice_items():
+        from bard.voices import group_by_language
+        voices = app.backend.list_voices_meta()
+        groups = group_by_language(voices)
+        # Flat menu when only one language is present.
+        if len(groups) <= 1:
+            return tuple(_voice_leaf(v) for v in voices)
+        out = []
+        for lang, lang_voices in groups.items():
+            flag = flag_for(lang)
+            label = f"{flag + ' ' if flag else ''}{lang or 'Other'} ({len(lang_voices)})"
+            inner = tuple(_voice_leaf(v) for v in lang_voices)
+            out.append(Item(label, Menu(*inner)))
+        return tuple(out)
 
     tts_menu = Item('TTS', Menu(
         Item('Backend', Menu(_backend_items)),

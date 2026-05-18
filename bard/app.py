@@ -13,6 +13,7 @@ def main():
 
     group = parser.add_argument_group("API Backend")
     group.add_argument("--voice", default=None, help="Voice to use")
+    group.add_argument("--language", default=None, help="Pick the first voice for the given language tag (e.g. 'fr' or 'fr-FR'). Ignored if --voice is also set.")
     group.add_argument("--model", default=None, help="Model to use")
     group.add_argument("--output-format", default="mp3", help="Output format")
     group.add_argument("--openai-api-key", default=None, help="OpenAI API key (alternative to OPENAI_API_KEY env var)")
@@ -83,23 +84,54 @@ def main():
     init_kwargs = dict(backend_kwargs)
     if api_keys.get(o.backend):
         init_kwargs["api_key"] = api_keys[o.backend]
-    backend = get_backend(o.backend, voice=o.voice, model=o.model, **init_kwargs)
+
+    voice = o.voice
+    if o.language and not voice:
+        from bard.voices import find_first_for_language
+        # Use the registered class to enumerate voices without paying for
+        # full model load -- list_voices_meta() is metadata-only for kokoro
+        # and openai; remote backends still need an instance for it.
+        cls = BACKENDS[o.backend]
+        try:
+            metas = cls.__new__(cls).list_voices_meta()
+        except Exception:
+            metas = None
+        if metas:
+            picked = find_first_for_language(metas, o.language)
+        else:
+            picked = None
+        if picked is None:
+            # Fall back: instantiate and search the live list.
+            tmp = get_backend(o.backend, voice=None, model=o.model, **init_kwargs)
+            picked = find_first_for_language(tmp.list_voices_meta(), o.language)
+        if picked is None:
+            print(f"No voice for language {o.language!r} in backend {o.backend!r}", file=sys.stderr)
+            return 2
+        voice = picked.id
+
+    backend = get_backend(o.backend, voice=voice, model=o.model, **init_kwargs)
 
     if o.list_voices:
+        from bard.voices import group_by_language
+        groups = group_by_language(backend.list_voices_meta())
         if o.verbose:
             get_desc = getattr(backend, "get_voice_description", None)
             get_cat = getattr(backend, "get_voice_category", None)
             print(f"{'name':<24} {'category':<14} {'language':<10} {'gender':<8} description")
-            for v in backend.list_voices_meta():
-                name = (v.display or v.id) or ""
-                cat = (get_cat(v.id) if callable(get_cat) else None) or ""
-                lang = v.language or ""
-                gender = v.gender or ""
-                desc = (get_desc(v.id) if callable(get_desc) else None) or ""
-                print(f"{name:<24} {cat:<14} {lang:<10} {gender:<8} {desc}")
+            for lang, vs in groups.items():
+                print(f"-- {lang or 'Other'} ({len(vs)}) --")
+                for v in vs:
+                    name = (v.display or v.id) or ""
+                    cat = (get_cat(v.id) if callable(get_cat) else None) or ""
+                    gender = v.gender or ""
+                    desc = (get_desc(v.id) if callable(get_desc) else None) or ""
+                    print(f"{name:<24} {cat:<14} {(lang or ''):<10} {gender:<8} {desc}")
         else:
-            for voice in backend.list_voices():
-                print(voice)
+            for lang, vs in groups.items():
+                if len(groups) > 1:
+                    print(f"-- {lang or 'Other'} --")
+                for v in vs:
+                    print(v.display or v.id)
         return 0
 
     if o.url:
