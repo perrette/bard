@@ -18,6 +18,7 @@ class PiperBackend(TTSBackend):
     output_format = "wav"
     sample_rate: int | None = None
     supports_streaming = False
+    is_local = True
 
     def __init__(self, voice=None, model=None, model_path=None, **kwargs):
         try:

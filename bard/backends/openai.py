@@ -10,6 +10,7 @@ class OpenAIBackend(TTSBackend):
     output_format = "mp3"
     sample_rate = None
     supports_streaming = False
+    is_local = False
 
     _VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 
@@ -48,3 +49,6 @@ class OpenAIBackend(TTSBackend):
 
     def list_voices_meta(self) -> list[Voice]:
         return [self._VOICE_META[v] for v in self._VOICES]
+
+    def list_models(self) -> list[str]:
+        return ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]

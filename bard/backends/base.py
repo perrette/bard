@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
+from typing import ClassVar, Iterator
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,7 @@ class TTSBackend(ABC):
     output_format: str
     sample_rate: int | None
     supports_streaming: bool = False
+    is_local: ClassVar[bool] = False
 
     @abstractmethod
     def synthesize(self, text: str, out_path: Path) -> Path:
@@ -33,6 +34,9 @@ class TTSBackend(ABC):
 
     def list_voices_meta(self) -> list["Voice"]:
         return [Voice(id=v) for v in self.list_voices()]
+
+    def list_models(self) -> list[str]:
+        return [self.default_model] if self.default_model else []
 
     def synthesize_stream(self, text: str) -> Iterator[bytes]:
         raise NotImplementedError

@@ -29,6 +29,7 @@ class KokoroBackend(TTSBackend):
     output_format = "wav"
     sample_rate = 24000
     supports_streaming = False
+    is_local = True
 
     def __init__(self, voice=None, model=None, model_path=None, voices_path=None, lang="en-us", speed=1.0, **kwargs):
         try:

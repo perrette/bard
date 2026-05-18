@@ -35,6 +35,7 @@ class ElevenLabsBackend(TTSBackend):
     output_format = "mp3"
     sample_rate = None
     supports_streaming = True
+    is_local = False
 
     def __init__(self, api_key=None, voice=None, model=None, output_format=None, **kwargs):
         try:
@@ -89,6 +90,9 @@ class ElevenLabsBackend(TTSBackend):
             return list(voices)
         except Exception:
             return list(_DEFAULT_VOICES.keys())
+
+    def list_models(self) -> list[str]:
+        return ["eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_multilingual_v2", "eleven_v3"]
 
     def list_voices_meta(self) -> list[Voice]:
         cached = getattr(self, "_meta_cache", None)
