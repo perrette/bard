@@ -59,6 +59,8 @@ def main():
             ok, reason = probe_backend(name)
             status = "ok" if ok else f"missing: {reason}"
             print(f"{name}\t{locality}\t{status}")
+            if not ok and cls.install_hint and "not found" in (reason or ""):
+                print(f"    install: {cls.install_hint}")
         return 0
 
     backend_kwargs = {

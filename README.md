@@ -104,6 +104,40 @@ bard --backend piper --voice en_US-amy-medium
 bard --backend elevenlabs --voice Rachel
 ```
 
+### Installing local backend models
+
+Remote backends (`openai`, `elevenlabs`) only need an API key.
+
+Local backends (`kokoro`, `piper`) need model files on disk. Bard searches, in
+order: `~/.local/share/{piper,kokoro}/`, then `~/.local/share/bard/{piper,kokoro}/`,
+then the system XDG data dirs, then the legacy `~/.cache/bard/{piper,kokoro}/`.
+Setting `BARD_PIPER_MODEL`, `BARD_KOKORO_MODEL_PATH`, or `BARD_KOKORO_VOICES_PATH`
+overrides the search.
+
+**Piper** — use the downloader that ships with `piper-tts`:
+
+```bash
+python -m piper.download_voices en_US-amy-medium --data-dir ~/.local/share/piper
+```
+
+Voice catalog: <https://huggingface.co/rhasspy/piper-voices>. Any `.onnx` files
+in the chosen directory show up under the `Voice` submenu and in
+`bard --backend piper --list-voices`.
+
+**Kokoro** — the upstream package has no downloader, so fetch the two files
+directly:
+
+```bash
+mkdir -p ~/.local/share/kokoro
+curl -L -o ~/.local/share/kokoro/kokoro-v0_19.onnx \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files/kokoro-v0_19.onnx
+curl -L -o ~/.local/share/kokoro/voices.bin \
+  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files/voices.bin
+```
+
+`bard --list-backends` shows the install command for any local backend whose
+model files are missing.
+
 ### Listing backends and voices
 
 ```bash

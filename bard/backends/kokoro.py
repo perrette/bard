@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from bard.backends.base import TTSBackend, Voice
-from bard.backends.paths import resolve_model_path, search_dirs
+from bard.backends.paths import resolve_model_path
 
 
 _DEFAULT_MODEL_FILENAME = "kokoro-v0_19.onnx"
@@ -22,6 +22,9 @@ _VOICES = [
 ]
 
 
+_KOKORO_RELEASE = "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files"
+
+
 class KokoroBackend(TTSBackend):
     name = "kokoro"
     default_voice = "af_sky"
@@ -30,6 +33,11 @@ class KokoroBackend(TTSBackend):
     sample_rate = 24000
     supports_streaming = False
     is_local = True
+    install_hint = (
+        "mkdir -p ~/.local/share/kokoro && "
+        f"curl -L -o ~/.local/share/kokoro/kokoro-v0_19.onnx {_KOKORO_RELEASE}/kokoro-v0_19.onnx && "
+        f"curl -L -o ~/.local/share/kokoro/voices.bin {_KOKORO_RELEASE}/voices.bin"
+    )
 
     def __init__(self, voice=None, model=None, model_path=None, voices_path=None, lang="en-us", speed=1.0, **kwargs):
         try:
@@ -47,16 +55,14 @@ class KokoroBackend(TTSBackend):
         voices_path = resolve_model_path("BARD_KOKORO_VOICES_PATH", "kokoro", _DEFAULT_VOICES_FILENAME, voices_path)
 
         if not model_path.exists():
-            dirs = ", ".join(str(d) for d in search_dirs("kokoro"))
             raise FileNotFoundError(
-                f"Kokoro model not found at {model_path}. "
-                f"Set BARD_KOKORO_MODEL_PATH or place {_DEFAULT_MODEL_FILENAME} in one of: {dirs}"
+                f"Kokoro model not found at {model_path}.\n"
+                f"To install: {self.install_hint}"
             )
         if not voices_path.exists():
-            dirs = ", ".join(str(d) for d in search_dirs("kokoro"))
             raise FileNotFoundError(
-                f"Kokoro voices file not found at {voices_path}. "
-                f"Set BARD_KOKORO_VOICES_PATH or place {_DEFAULT_VOICES_FILENAME} in one of: {dirs}"
+                f"Kokoro voices file not found at {voices_path}.\n"
+                f"To install: {self.install_hint}"
             )
 
         self._kokoro = Kokoro(str(model_path), str(voices_path))

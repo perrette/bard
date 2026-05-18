@@ -3,7 +3,7 @@ import wave
 from pathlib import Path
 
 from bard.backends.base import TTSBackend, Voice
-from bard.backends.paths import resolve_model_path, search_dirs
+from bard.backends.paths import resolve_model_path
 
 
 _DEFAULT_VOICE_FILENAME = "en_US-amy-medium.onnx"
@@ -19,6 +19,7 @@ class PiperBackend(TTSBackend):
     sample_rate: int | None = None
     supports_streaming = False
     is_local = True
+    install_hint = "python -m piper.download_voices en_US-amy-medium --data-dir ~/.local/share/piper"
 
     def __init__(self, voice=None, model=None, model_path=None, **kwargs):
         try:
@@ -28,10 +29,9 @@ class PiperBackend(TTSBackend):
 
         model_path = resolve_model_path("BARD_PIPER_MODEL", "piper", _DEFAULT_VOICE_FILENAME, model_path)
         if not model_path.exists():
-            dirs = ", ".join(str(d) for d in search_dirs("piper"))
             raise FileNotFoundError(
-                f"Piper model not found at {model_path}. "
-                f"Set BARD_PIPER_MODEL or place a .onnx file in one of: {dirs}"
+                f"Piper model not found at {model_path}.\n"
+                f"To install: {self.install_hint}"
             )
 
         self._voice = PiperVoice.load(str(model_path))

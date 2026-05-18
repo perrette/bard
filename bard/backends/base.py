@@ -23,6 +23,7 @@ class TTSBackend(ABC):
     sample_rate: int | None
     supports_streaming: bool = False
     is_local: ClassVar[bool] = False
+    install_hint: ClassVar[str | None] = None
 
     @abstractmethod
     def synthesize(self, text: str, out_path: Path) -> Path:
