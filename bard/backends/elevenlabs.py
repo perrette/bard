@@ -28,6 +28,9 @@ _FALLBACK_VOICES_META: list[Voice] = [
 ]
 
 
+_FALLBACK_MODELS = ["eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_multilingual_v2", "eleven_v3"]
+
+
 class ElevenLabsBackend(TTSBackend):
     name = "elevenlabs"
     default_voice = "Rachel"
@@ -56,6 +59,7 @@ class ElevenLabsBackend(TTSBackend):
         if output_format:
             self.output_format = output_format
         self._voice_cache: list[str] | None = None
+        self._model_cache: list[str] | None = None
 
     def _resolve_voice_id(self, voice: str) -> str:
         return _DEFAULT_VOICES.get(voice, voice)
@@ -92,7 +96,14 @@ class ElevenLabsBackend(TTSBackend):
             return list(_DEFAULT_VOICES.keys())
 
     def list_models(self) -> list[str]:
-        return ["eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_multilingual_v2", "eleven_v3"]
+        if self._model_cache is not None:
+            return list(self._model_cache)
+        try:
+            ids = [m.model_id for m in self.client.models.list() if m.can_do_text_to_speech]
+            self._model_cache = ids or list(_FALLBACK_MODELS)
+            return list(self._model_cache)
+        except Exception:
+            return list(_FALLBACK_MODELS)
 
     def list_voices_meta(self) -> list[Voice]:
         cached = getattr(self, "_meta_cache", None)

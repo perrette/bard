@@ -13,6 +13,7 @@ class OpenAIBackend(TTSBackend):
     is_local = False
 
     _VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+    _FALLBACK_MODELS = ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
 
     def __init__(self, api_key=None, voice=None, model=None, max_length=None, output_format="mp3"):
         try:
@@ -24,6 +25,7 @@ class OpenAIBackend(TTSBackend):
         self.voice = voice or "alloy"
         self.output_format = output_format
         self.max_length = max_length or 4096
+        self._model_cache: list[str] | None = None
 
     def synthesize(self, text: str, out_path: Path) -> Path:
         response = self.client.audio.speech.create(
@@ -51,4 +53,11 @@ class OpenAIBackend(TTSBackend):
         return [self._VOICE_META[v] for v in self._VOICES]
 
     def list_models(self) -> list[str]:
-        return ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"]
+        if self._model_cache is not None:
+            return list(self._model_cache)
+        try:
+            ids = sorted({m.id for m in self.client.models.list().data if "tts" in m.id.lower()})
+            self._model_cache = ids or list(self._FALLBACK_MODELS)
+            return list(self._model_cache)
+        except Exception:
+            return list(self._FALLBACK_MODELS)
