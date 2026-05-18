@@ -32,9 +32,11 @@ classifiers = [
 
 keywords = [
     "text-to-speech",
+    "TTS",
     "AI",
     "language",
     "openai",
+    "API",
 ]
 
 [project.optional-dependencies]
