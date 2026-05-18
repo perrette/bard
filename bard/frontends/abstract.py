@@ -4,13 +4,14 @@ from bard.util import logger, clean_cache, get_audio_files_from_cache, is_runnin
 from bard.chunking import render_chunks
 from bard.input import preprocess_input_text, get_text_from_clipboard
 from bard.audio import AudioPlayer
+from bard.backends import get_backend
 
 def is_running_in_terminal(view):
     return view is None or getattr(view, "backend", None) == "terminal"
 
 class AbstractApp:
 
-    def __init__(self, backend, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None):
+    def __init__(self, backend, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None, backend_kwargs=None):
         self.backend = backend
         self.audioplayer = audioplayer
         self.params = params or {}
@@ -19,6 +20,23 @@ class AbstractApp:
         self.logger = logger
         self.track_index = track_index
         self.is_externally_open = False
+        self.backend_kwargs = backend_kwargs or {}
+
+    def switch_backend(self, name: str) -> bool:
+        try:
+            new_backend = get_backend(name, **self.backend_kwargs)
+        except Exception as e:
+            self.logger.error(f"Failed to switch backend to {name!r}: {e}")
+            return False
+        self.backend = new_backend
+        self.backend.voice = self.backend.default_voice
+        return True
+
+    def set_voice(self, voice_id: str) -> None:
+        self.backend.voice = voice_id
+
+    def set_model(self, model_id: str) -> None:
+        self.backend.model = model_id
 
     def set_param(self, item, value=None):
         self.params[str(item)] = item.value if hasattr(item, "value") and value is None else value
