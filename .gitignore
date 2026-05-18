@@ -4,3 +4,6 @@ __pycache__
 build
 dist
 bard/_version.py
+
+# Autonomous roadmap workflows (local coordination artifacts; never committed)
+workflows/
