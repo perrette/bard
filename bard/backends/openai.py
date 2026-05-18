@@ -14,7 +14,10 @@ class OpenAIBackend(TTSBackend):
     _VOICES = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 
     def __init__(self, api_key=None, voice=None, model=None, max_length=None, output_format="mp3"):
-        from openai import OpenAI
+        try:
+            from openai import OpenAI
+        except ImportError as e:
+            raise ImportError("pip install bard-cli[openai]") from e
         self.client = OpenAI(api_key=api_key)
         self.model = model or "tts-1"
         self.voice = voice or "alloy"
