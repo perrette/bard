@@ -21,7 +21,7 @@ def probe_backend(name: str) -> tuple[bool, str | None]:
     if name not in BACKENDS:
         raise KeyError(name)
 
-    if name in ("openai", "openaiapi"):
+    if name == "openai":
         if importlib.util.find_spec("openai") is None:
             return False, "openai SDK not installed"
         if not os.environ.get("OPENAI_API_KEY"):
@@ -70,7 +70,6 @@ def probe_backend(name: str) -> tuple[bool, str | None]:
 
 from bard.backends.openai import OpenAIBackend  # noqa: E402
 BACKENDS["openai"] = OpenAIBackend
-BACKENDS["openaiapi"] = OpenAIBackend
 
 from bard.backends.kokoro import KokoroBackend  # noqa: E402
 BACKENDS["kokoro"] = KokoroBackend

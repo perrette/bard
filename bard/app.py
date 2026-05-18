@@ -16,7 +16,7 @@ def main():
     group.add_argument("--model", default=None, help="Model to use")
     group.add_argument("--output-format", default="mp3", help="Output format")
     group.add_argument("--openai-api-key", default=None, help="OpenAI API key")
-    group.add_argument("--backend", default="openaiapi", help="Backend to use")
+    group.add_argument("--backend", default="openai", help="Backend to use")
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
     group.add_argument("--list-voices", action="store_true", help="List available voices for the selected backend and exit")
     group.add_argument("--verbose", action="store_true", help="With --list-voices: show language/gender/model table")

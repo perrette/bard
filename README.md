@@ -49,7 +49,7 @@ bard
 ```
 which defaults to:
 ```bash
-bard --backend openaiapi --voice alloy --model tts-1
+bard --backend openai --voice alloy --model tts-1
 ```
 (this assumes the environment variable `OPENAI_API_KEY` is defined)
 
@@ -93,7 +93,7 @@ Bard supports four TTS backends. Use `--backend <name>` to select one at startup
 
 | Backend | `--backend` value | Type | Notes |
 |---------|------------------|------|-------|
-| OpenAI TTS | `openai` or `openaiapi` | remote | requires `OPENAI_API_KEY` |
+| OpenAI TTS | `openai` | remote | requires `OPENAI_API_KEY` |
 | ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` |
 | Kokoro | `kokoro` | local | free, offline, English voices |
 | Piper | `piper` | local | free, offline, multilingual |
