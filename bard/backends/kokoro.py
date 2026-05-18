@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from bard.backends.base import TTSBackend
+from bard.backends.base import TTSBackend, Voice
 
 
 _DEFAULT_MODEL_PATH = Path.home() / ".cache" / "bard" / "kokoro" / "kokoro-v0_19.onnx"
@@ -69,3 +69,18 @@ class KokoroBackend(TTSBackend):
 
     def list_voices(self) -> list[str]:
         return list(_VOICES)
+
+    def list_voices_meta(self) -> list[Voice]:
+        _LANG = {"a": "en-US", "b": "en-GB"}
+        _GENDER = {"f": "female", "m": "male"}
+        result = []
+        for vid in _VOICES:
+            parts = vid.split("_", 1)
+            if len(parts) == 2 and len(parts[0]) == 2:
+                language = _LANG.get(parts[0][0])
+                gender = _GENDER.get(parts[0][1])
+            else:
+                language = "en"
+                gender = None
+            result.append(Voice(id=vid, language=language, gender=gender))
+        return result
