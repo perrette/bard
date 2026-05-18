@@ -63,11 +63,31 @@ class ElevenLabsBackend(TTSBackend):
             )
 
         self.client = ElevenLabs(api_key=api_key)
-        self.voice = voice or self.default_voice
         self.model = model or self.default_model
         if output_format:
             self.output_format = output_format
         self._model_cache: list[str] | None = None
+        self.voice = voice or self._pick_default_voice()
+
+    def _is_free_usable(self, voice_id: str) -> bool:
+        cat = getattr(self, "_categories", {}).get(voice_id)
+        if cat in ("premade", "cloned", "generated"):
+            return True
+        tiers = getattr(self, "_tiers", {}).get(voice_id, [])
+        return any(str(t).lower() == "free" for t in tiers)
+
+    def _pick_default_voice(self) -> str:
+        try:
+            meta = self.list_voices_meta()
+            for v in meta:
+                if getattr(self, "_categories", {}).get(v.id) == "premade":
+                    return v.display or v.id
+            for v in meta:
+                if self._is_free_usable(v.id):
+                    return v.display or v.id
+        except Exception:
+            pass
+        return self.default_voice
 
     def _resolve_voice_id(self, voice: str) -> str:
         if not voice:
@@ -88,6 +108,11 @@ class ElevenLabsBackend(TTSBackend):
         if not hasattr(self, "_descriptions"):
             self.list_voices_meta()
         return getattr(self, "_descriptions", {}).get(voice_id) or None
+
+    def get_voice_category(self, voice_id: str) -> str | None:
+        if not hasattr(self, "_categories"):
+            self.list_voices_meta()
+        return getattr(self, "_categories", {}).get(voice_id) or None
 
     def _stream(self, text: str) -> Iterator[bytes]:
         audio_iter = self.client.text_to_speech.convert(
@@ -134,10 +159,12 @@ class ElevenLabsBackend(TTSBackend):
         if cached is not None:
             return cached
         from bard.backends import diskcache
-        disk = diskcache.load("elevenlabs", "voices_meta_v3", diskcache.DEFAULT_TTL_SECONDS)
+        disk = diskcache.load("elevenlabs", "voices_meta_v4", diskcache.DEFAULT_TTL_SECONDS)
         if disk is not None:
             result = []
             desc_map: dict[str, str] = {}
+            cat_map: dict[str, str | None] = {}
+            tier_map: dict[str, list[str]] = {}
             for entry in disk:
                 v = Voice(
                     id=entry["id"],
@@ -147,13 +174,19 @@ class ElevenLabsBackend(TTSBackend):
                 )
                 result.append(v)
                 desc_map[v.id] = entry.get("description") or ""
+                cat_map[v.id] = entry.get("category")
+                tier_map[v.id] = list(entry.get("tiers") or [])
             self._meta_cache = result
             self._descriptions = desc_map
+            self._categories = cat_map
+            self._tiers = tier_map
             return result
         try:
             response = self.client.voices.get_all()
             result = []
             desc_map = {}
+            cat_map = {}
+            tier_map = {}
             for v in response.voices:
                 labels = getattr(v, "labels", {}) or {}
                 language = labels.get("language") or labels.get("accent")
@@ -161,11 +194,16 @@ class ElevenLabsBackend(TTSBackend):
                 name, description = _split_label(v.name or "", getattr(v, "description", None) or "")
                 result.append(Voice(id=v.voice_id, language=language, gender=gender, display=name))
                 desc_map[v.voice_id] = description
+                cat_map[v.voice_id] = getattr(v, "category", None)
+                tier_map[v.voice_id] = list(getattr(v, "available_for_tiers", []) or [])
             self._meta_cache = result
             self._descriptions = desc_map
-            diskcache.save("elevenlabs", "voices_meta_v3", [
+            self._categories = cat_map
+            self._tiers = tier_map
+            diskcache.save("elevenlabs", "voices_meta_v4", [
                 {"id": v.id, "language": v.language, "gender": v.gender,
-                 "display": v.display, "description": desc_map.get(v.id, "")}
+                 "display": v.display, "description": desc_map.get(v.id, ""),
+                 "category": cat_map.get(v.id), "tiers": tier_map.get(v.id, [])}
                 for v in result
             ])
             return result

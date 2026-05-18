@@ -88,13 +88,15 @@ def main():
     if o.list_voices:
         if o.verbose:
             get_desc = getattr(backend, "get_voice_description", None)
-            print(f"{'name':<24} {'language':<10} {'gender':<8} description")
+            get_cat = getattr(backend, "get_voice_category", None)
+            print(f"{'name':<24} {'category':<14} {'language':<10} {'gender':<8} description")
             for v in backend.list_voices_meta():
                 name = (v.display or v.id) or ""
+                cat = (get_cat(v.id) if callable(get_cat) else None) or ""
                 lang = v.language or ""
                 gender = v.gender or ""
                 desc = (get_desc(v.id) if callable(get_desc) else None) or ""
-                print(f"{name:<24} {lang:<10} {gender:<8} {desc}")
+                print(f"{name:<24} {cat:<14} {lang:<10} {gender:<8} {desc}")
         else:
             for voice in backend.list_voices():
                 print(voice)
