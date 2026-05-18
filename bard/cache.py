@@ -20,7 +20,7 @@ def parse_file(file):
       chunk_<ts>_<backend>_<index>.<ext>            (intermediate)
       chunk_<ts>_<backend>_<voice>_<index>.<ext>    (current)
       merged_<ts>.<ext>                             (merged, no index)
-    Tolerates old patterns with a warning; returns (None, 0) on no match.
+    Returns (None, 0) on no match.
     """
     stem = Path(file).stem
     prefix_match = re.match(r'^(chunk|merged)_(.*)', stem)
@@ -36,10 +36,6 @@ def parse_file(file):
 
     idx_match = re.search(r'_(\d+)$', remainder)
     if idx_match:
-        middle = remainder[:idx_match.start()]
-        n_parts = len([p for p in middle.split('_') if p])
-        if n_parts == 0:
-            logger.warning("Old-format cache file (no backend/voice): %s", Path(file).name)
         return date, int(idx_match.group(1))
 
     if prefix == 'merged':

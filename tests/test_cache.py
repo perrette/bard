@@ -25,7 +25,7 @@ TS = "2026-05-18T120000.000000"
         (f"chunk_{TS}_piper_en_US-amy-medium_3.wav", (TS, 3)),
         # Intermediate format: chunk_<ts>_<backend>_<index>.<ext>
         (f"chunk_{TS}_openai_2.mp3", (TS, 2)),
-        # Old format (no backend/voice): emits a warning but still parses.
+        # Old format (no backend/voice): still parses.
         (f"chunk_{TS}_5.mp3", (TS, 5)),
         # Merged file, no index: returns index = -1.
         (f"merged_{TS}.mp3", (TS, -1)),
