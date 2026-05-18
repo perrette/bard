@@ -1,11 +1,11 @@
 import logging
+import os
 import select
 import sys
 import termios
 import time
 import tty
 
-import readchar
 from readchar import key as _key
 
 from bard.frontends.abstract import AbstractApp
@@ -33,6 +33,37 @@ def _progress_bar(position: float, total: float, width: int = 24) -> str:
     frac = max(0.0, min(1.0, position / total))
     filled = int(frac * width)
     return "▰" * filled + "▱" * (width - filled)
+
+
+def _read_key(fd: int, esc_timeout: float = 0.05) -> str:
+    """Read one keypress (including ANSI escape sequences) from `fd`.
+
+    Unlike readchar.readkey(), this does NOT call tcsetattr(TCSAFLUSH)
+    on entry — TCSAFLUSH discards anything already buffered in stdin,
+    which would eat the byte that select() just signalled as ready and
+    force the user to press every key twice. The terminal must already
+    be in cbreak mode (caller's responsibility).
+    """
+    b = os.read(fd, 1)
+    if b != b"\x1b":
+        return b.decode("utf-8", errors="replace")
+    # Possible escape sequence — see if more bytes are coming
+    ready, _, _ = select.select([sys.stdin], [], [], esc_timeout)
+    if not ready:
+        return _key.ESC
+    buf = b + os.read(fd, 1)
+    if buf[1:2] != b"[":
+        return buf.decode("utf-8", errors="replace")
+    # CSI sequence; read until a final byte (0x40..0x7E)
+    while True:
+        ready, _, _ = select.select([sys.stdin], [], [], esc_timeout)
+        if not ready:
+            break
+        c = os.read(fd, 1)
+        buf += c
+        if 0x40 <= c[0] <= 0x7E:
+            break
+    return buf.decode("utf-8", errors="replace")
 
 
 def _playback_mode(view, app):
@@ -88,7 +119,7 @@ def _playback_mode(view, app):
             ready, _, _ = select.select([sys.stdin], [], [], 0.25)
             if not ready:
                 continue
-            ch = readchar.readkey()
+            ch = _read_key(fd)
             if ch == " ":
                 if app.audioplayer is None:
                     break
