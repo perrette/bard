@@ -31,6 +31,15 @@ _FALLBACK_VOICES_META: list[Voice] = [
 _FALLBACK_MODELS = ["eleven_turbo_v2_5", "eleven_flash_v2_5", "eleven_multilingual_v2", "eleven_v3"]
 
 
+def _split_label(api_name: str, api_description: str) -> tuple[str, str]:
+    name = api_name.strip()
+    desc = (api_description or "").strip()
+    if " - " in name and not desc:
+        head, tail = name.split(" - ", 1)
+        return head.strip(), tail.strip()
+    return name, desc
+
+
 class ElevenLabsBackend(TTSBackend):
     name = "elevenlabs"
     default_voice = "Aria"
@@ -58,11 +67,27 @@ class ElevenLabsBackend(TTSBackend):
         self.model = model or self.default_model
         if output_format:
             self.output_format = output_format
-        self._voice_cache: list[str] | None = None
         self._model_cache: list[str] | None = None
 
     def _resolve_voice_id(self, voice: str) -> str:
-        return _DEFAULT_VOICES.get(voice, voice)
+        if not voice:
+            return voice
+        lower = voice.lower()
+        for name, vid in _DEFAULT_VOICES.items():
+            if name.lower() == lower:
+                return vid
+        try:
+            for v in self.list_voices_meta():
+                if v.display and v.display.lower() == lower:
+                    return v.id
+        except Exception:
+            pass
+        return voice
+
+    def get_voice_description(self, voice_id: str) -> str | None:
+        if not hasattr(self, "_descriptions"):
+            self.list_voices_meta()
+        return getattr(self, "_descriptions", {}).get(voice_id) or None
 
     def _stream(self, text: str) -> Iterator[bytes]:
         audio_iter = self.client.text_to_speech.convert(
@@ -85,21 +110,7 @@ class ElevenLabsBackend(TTSBackend):
         yield from self._stream(text)
 
     def list_voices(self) -> list[str]:
-        if self._voice_cache is not None:
-            return list(self._voice_cache)
-        from bard.backends import diskcache
-        cached = diskcache.load("elevenlabs", "voices", diskcache.DEFAULT_TTL_SECONDS)
-        if cached is not None:
-            self._voice_cache = cached
-            return list(cached)
-        try:
-            response = self.client.voices.get_all()
-            voices = [v.name for v in response.voices]
-            self._voice_cache = voices
-            diskcache.save("elevenlabs", "voices", voices)
-            return list(voices)
-        except Exception:
-            return list(_DEFAULT_VOICES.keys())
+        return [v.display or v.id for v in self.list_voices_meta()]
 
     def list_models(self) -> list[str]:
         if self._model_cache is not None:
@@ -123,22 +134,38 @@ class ElevenLabsBackend(TTSBackend):
         if cached is not None:
             return cached
         from bard.backends import diskcache
-        disk = diskcache.load("elevenlabs", "voices_meta_v2", diskcache.DEFAULT_TTL_SECONDS)
+        disk = diskcache.load("elevenlabs", "voices_meta_v3", diskcache.DEFAULT_TTL_SECONDS)
         if disk is not None:
-            result = [Voice(**v) for v in disk]
+            result = []
+            desc_map: dict[str, str] = {}
+            for entry in disk:
+                v = Voice(
+                    id=entry["id"],
+                    language=entry.get("language"),
+                    gender=entry.get("gender"),
+                    display=entry.get("display"),
+                )
+                result.append(v)
+                desc_map[v.id] = entry.get("description") or ""
             self._meta_cache = result
+            self._descriptions = desc_map
             return result
         try:
             response = self.client.voices.get_all()
             result = []
+            desc_map = {}
             for v in response.voices:
                 labels = getattr(v, "labels", {}) or {}
                 language = labels.get("language") or labels.get("accent")
                 gender = labels.get("gender")
-                result.append(Voice(id=v.voice_id, language=language, gender=gender, display=v.name))
+                name, description = _split_label(v.name or "", getattr(v, "description", None) or "")
+                result.append(Voice(id=v.voice_id, language=language, gender=gender, display=name))
+                desc_map[v.voice_id] = description
             self._meta_cache = result
-            diskcache.save("elevenlabs", "voices_meta_v2", [
-                {"id": v.id, "language": v.language, "gender": v.gender, "display": v.display}
+            self._descriptions = desc_map
+            diskcache.save("elevenlabs", "voices_meta_v3", [
+                {"id": v.id, "language": v.language, "gender": v.gender,
+                 "display": v.display, "description": desc_map.get(v.id, "")}
                 for v in result
             ])
             return result
