@@ -123,7 +123,7 @@ class ElevenLabsBackend(TTSBackend):
         if cached is not None:
             return cached
         from bard.backends import diskcache
-        disk = diskcache.load("elevenlabs", "voices_meta", diskcache.DEFAULT_TTL_SECONDS)
+        disk = diskcache.load("elevenlabs", "voices_meta_v2", diskcache.DEFAULT_TTL_SECONDS)
         if disk is not None:
             result = [Voice(**v) for v in disk]
             self._meta_cache = result
@@ -135,9 +135,9 @@ class ElevenLabsBackend(TTSBackend):
                 labels = getattr(v, "labels", {}) or {}
                 language = labels.get("language") or labels.get("accent")
                 gender = labels.get("gender")
-                result.append(Voice(id=v.name, language=language, gender=gender, display=v.name))
+                result.append(Voice(id=v.voice_id, language=language, gender=gender, display=v.name))
             self._meta_cache = result
-            diskcache.save("elevenlabs", "voices_meta", [
+            diskcache.save("elevenlabs", "voices_meta_v2", [
                 {"id": v.id, "language": v.language, "gender": v.gender, "display": v.display}
                 for v in result
             ])
