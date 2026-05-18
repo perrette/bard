@@ -87,10 +87,16 @@ class ElevenLabsBackend(TTSBackend):
     def list_voices(self) -> list[str]:
         if self._voice_cache is not None:
             return list(self._voice_cache)
+        from bard.backends import diskcache
+        cached = diskcache.load("elevenlabs", "voices", diskcache.DEFAULT_TTL_SECONDS)
+        if cached is not None:
+            self._voice_cache = cached
+            return list(cached)
         try:
             response = self.client.voices.get_all()
             voices = [v.name for v in response.voices]
             self._voice_cache = voices
+            diskcache.save("elevenlabs", "voices", voices)
             return list(voices)
         except Exception:
             return list(_DEFAULT_VOICES.keys())
@@ -98,10 +104,17 @@ class ElevenLabsBackend(TTSBackend):
     def list_models(self) -> list[str]:
         if self._model_cache is not None:
             return list(self._model_cache)
+        from bard.backends import diskcache
+        cached = diskcache.load("elevenlabs", "models", diskcache.DEFAULT_TTL_SECONDS)
+        if cached is not None:
+            self._model_cache = cached
+            return list(cached)
         try:
             ids = [m.model_id for m in self.client.models.list() if m.can_do_text_to_speech]
-            self._model_cache = ids or list(_FALLBACK_MODELS)
-            return list(self._model_cache)
+            result = ids or list(_FALLBACK_MODELS)
+            self._model_cache = result
+            diskcache.save("elevenlabs", "models", result)
+            return list(result)
         except Exception:
             return list(_FALLBACK_MODELS)
 
@@ -109,6 +122,12 @@ class ElevenLabsBackend(TTSBackend):
         cached = getattr(self, "_meta_cache", None)
         if cached is not None:
             return cached
+        from bard.backends import diskcache
+        disk = diskcache.load("elevenlabs", "voices_meta", diskcache.DEFAULT_TTL_SECONDS)
+        if disk is not None:
+            result = [Voice(**v) for v in disk]
+            self._meta_cache = result
+            return result
         try:
             response = self.client.voices.get_all()
             result = []
@@ -118,6 +137,10 @@ class ElevenLabsBackend(TTSBackend):
                 gender = labels.get("gender")
                 result.append(Voice(id=v.name, language=language, gender=gender, display=v.name))
             self._meta_cache = result
+            diskcache.save("elevenlabs", "voices_meta", [
+                {"id": v.id, "language": v.language, "gender": v.gender, "display": v.display}
+                for v in result
+            ])
             return result
         except Exception:
             return list(_FALLBACK_VOICES_META)

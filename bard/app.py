@@ -50,8 +50,14 @@ def main():
 
     group = parser.add_argument_group("Maintenance")
     parser.add_argument("--clean-cache-on-exit", action="store_true", help="Clean the cache directory on exit")
+    parser.add_argument("--refresh-cache", action="store_true", help="Clear the API disk cache and exit")
 
     o = parser.parse_args()
+
+    if o.refresh_cache:
+        from bard.backends import diskcache
+        diskcache.clear_all()
+        return 0
 
     if o.list_backends:
         for name in available_backends():
