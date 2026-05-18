@@ -1,6 +1,6 @@
 import sys
 
-from bard.backends import get_backend
+from bard.backends import get_backend, available_backends, probe_backend, BACKENDS
 from bard.audio import AudioPlayer
 from bard.chunking import render_chunks
 from bard.cache import get_resume_files
@@ -19,6 +19,8 @@ def main():
     group.add_argument("--backend", default="openaiapi", help="Backend to use")
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
     group.add_argument("--list-voices", action="store_true", help="List available voices for the selected backend and exit")
+    group.add_argument("--verbose", action="store_true", help="With --list-voices: show language/gender/model table")
+    group.add_argument("--list-backends", action="store_true", help="List registered backends with availability and exit")
 
     group = parser.add_argument_group("Frontend")
     group.add_argument("--frontend", choices=["tray", "terminal"], default="tray", help="Frontend to use")
@@ -50,11 +52,34 @@ def main():
 
     o = parser.parse_args()
 
-    backend = get_backend(o.backend, voice=o.voice, model=o.model, output_format=o.output_format, api_key=o.openai_api_key, max_length=o.chunk_size)
+    if o.list_backends:
+        for name in available_backends():
+            cls = BACKENDS[name]
+            locality = "local" if cls.is_local else "remote"
+            ok, reason = probe_backend(name)
+            status = "ok" if ok else f"missing: {reason}"
+            print(f"{name}\t{locality}\t{status}")
+        return 0
+
+    backend_kwargs = {
+        "api_key": o.openai_api_key,
+        "output_format": o.output_format,
+        "max_length": o.chunk_size,
+    }
+
+    backend = get_backend(o.backend, voice=o.voice, model=o.model, **backend_kwargs)
 
     if o.list_voices:
-        for voice in backend.list_voices():
-            print(voice)
+        if o.verbose:
+            model_col = o.model or backend.default_model or ""
+            print(f"{'id':<30} {'language':<12} {'gender':<8} {'model'}")
+            for v in backend.list_voices_meta():
+                lang = v.language or ""
+                gender = v.gender or ""
+                print(f"{v.id:<30} {lang:<12} {gender:<8} {model_col}")
+        else:
+            for voice in backend.list_voices():
+                print(voice)
         return 0
 
     if o.url:
@@ -131,7 +156,7 @@ def main():
     else:
         from bard.frontends.terminal import create_app
 
-    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, **options)
+    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, backend_kwargs=backend_kwargs, **options)
 
     if player is not None:
         player.play()
