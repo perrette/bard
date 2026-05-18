@@ -20,6 +20,7 @@ dependencies = [
     "tqdm",
     "pyperclip",
     "pystray",
+    "readchar",
     "desktop-ai-core @ git+https://github.com/perrette/desktop-ai-core.git@d6e2a864cbd059a13c77637077883fb9dea5e728",
 ]
 

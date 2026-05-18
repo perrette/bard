@@ -1,10 +1,124 @@
 import shutil
 import datetime
+import select
+import sys
+import termios
+import time
+import tty
+
+import readchar
+from readchar import key as _key
 
 from bard.util import logger
 from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 from desktop_ai_core.frontends.terminal import Item, SetValueItem, Menu
+
+
+_last_key_time: dict[str, float] = {}
+
+
+def _format_time(seconds: float) -> str:
+    if seconds < 0:
+        seconds = 0
+    total = int(seconds)
+    hours, rem = divmod(total, 3600)
+    minutes, secs = divmod(rem, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
+
+
+def _progress_bar(position: float, total: float, width: int = 24) -> str:
+    if total <= 0:
+        return "▱" * width
+    frac = max(0.0, min(1.0, position / total))
+    filled = int(frac * width)
+    return "▰" * filled + "▱" * (width - filled)
+
+
+def _playback_mode(view, app):
+    _last_key_time.clear()
+    fd = sys.stdin.fileno()
+    saved = termios.tcgetattr(fd)
+    jump_hint = app.get_param("jump_back")
+    hint_line = f"[space] play/pause  [←→] ±{jump_hint} s  [↑↓] track  [del] del  [q] menu"
+
+    def _draw():
+        player = app.audioplayer
+        if player is None:
+            return
+        if player.is_playing:
+            icon = "▶"
+        elif player.is_done:
+            icon = "⏹"
+        else:
+            icon = "⏸"
+        pos = player.current_position_seconds
+        total = player.total_duration
+        line1 = f"{icon}  {_format_time(pos)} / {_format_time(total)}"
+        line2 = _progress_bar(pos, total)
+        sys.stdout.write("\033[s")
+        sys.stdout.write(f"\033[K{line1}\n")
+        sys.stdout.write(f"\033[K{line2}\n")
+        sys.stdout.write(f"\033[K{hint_line}")
+        sys.stdout.write("\033[u")
+        sys.stdout.flush()
+
+    try:
+        sys.stdout.write("\033[?25l")
+        sys.stdout.flush()
+        tty.setcbreak(fd)
+        # Reserve 3 lines for the dashboard
+        sys.stdout.write("\n\n\n")
+        sys.stdout.write("\033[3A")
+        sys.stdout.flush()
+
+        while True:
+            if app.audioplayer is None:
+                break
+            _draw()
+            ready, _, _ = select.select([sys.stdin], [], [], 0.25)
+            if not ready:
+                continue
+            ch = readchar.readkey()
+            if ch == " ":
+                if app.audioplayer is None:
+                    break
+                if app.audioplayer.is_playing:
+                    app.callback_pause(view, None)
+                else:
+                    app.callback_play(view, None)
+            elif ch == _key.LEFT or ch == _key.RIGHT:
+                if app.audioplayer is None:
+                    break
+                now = time.monotonic()
+                prev = _last_key_time.get(ch, 0.0)
+                if (now - prev) < 0.15:
+                    delta = 1.0
+                else:
+                    delta = float(app.get_param(
+                        "jump_back" if ch == _key.LEFT else "jump_forward"))
+                _last_key_time[ch] = now
+                pos = app.audioplayer.current_position_seconds
+                target = pos - delta if ch == _key.LEFT else pos + delta
+                app.audioplayer.jump_to(target)
+            elif ch == _key.UP:
+                app.callback_previous_track(view, None)
+            elif ch == _key.DOWN:
+                app.callback_next_track(view, None)
+            elif ch == _key.DELETE:
+                app.callback_delete_this_track(view, None)
+                break
+            elif ch in ("q", "Q", _key.ESC):
+                break
+            else:
+                continue
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, saved)
+        sys.stdout.write("\033[?25h")
+        sys.stdout.write("\033[3B\n")
+        sys.stdout.flush()
 
 
 class _DynamicItem(Item):
@@ -165,16 +279,10 @@ def create_app(backend, player, models=[],
               for name in options),
             Item("Done", lambda x, y=None: False) ])
 
-    def _play_pause_label():
-        if app.audioplayer is not None and app.audioplayer.is_playing:
-            return "⏸ Pause"
-        return "▶ Play"
-
-    def _play_pause_cb(view, item=None):
-        if app.audioplayer is not None and app.audioplayer.is_playing:
-            app.callback_pause(view, item)
-        else:
-            app.callback_play(view, item)
+    def _callback_process_then_play(view, item=None):
+        app.callback_process_clipboard(view, item)
+        if app.audioplayer is not None:
+            _playback_mode(view, app)
 
     def _seek_submenu(view, item):
         def _seek(frac):
@@ -200,8 +308,8 @@ def create_app(backend, player, models=[],
         Menu(items, name="Tracks")(view, None)
 
     menu = Menu([
-        Item('Process Copied Text', app.callback_process_clipboard),
-        _DynamicItem(_play_pause_label, _play_pause_cb, visible=app.is_processed),
+        Item('Process Copied Text', _callback_process_then_play),
+        Item('▶ Now playing', lambda v, i=None: _playback_mode(v, app), visible=app.is_processed),
         Item('Stop', app.callback_stop, visible=app.is_processed),
         Item(f'⏪ {jump_back} s', app.callback_jump_back, visible=app.is_processed),
         Item(f'⏩ {jump_forward} s', app.callback_jump_forward, visible=app.is_processed),
