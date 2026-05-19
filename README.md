@@ -57,7 +57,7 @@ bard --backend openai --voice alloy --model gpt-4o-mini-tts
 An icon should show up almost immediately in the system tray, with options to copy the content of the clipboard (the last thing you copy-pasted)
 and send that to the AI model for reading aloud.
 
-<img src=https://github.com/user-attachments/assets/a90ccd1c-7431-4554-9d41-0e9c1b4399f2 width=300px>
+<img src=https://raw.githubusercontent.com/perrette/bard/main/docs/app-tray-menu.png width=300px>
 
 You can also do a one-off reading by indicating the source content with one of the following:
 
@@ -182,8 +182,6 @@ bard --backend kokoro --language pt-BR   # first Brazilian-Portuguese voice
 `Voice` submenus also group entries by language for easier browsing.
 
 ## Tray menu
-
-![alt text](https://raw.githubusercontent.com/perrette/bard/main/docs/app-tray-menu.png)
 
 The system tray icon shows the active `Vendor model` as the top-level TTS entry, with `Model` and `Voice` sub-submenus inside. Selecting a model also switches backend if needed:
 
