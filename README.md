@@ -183,6 +183,8 @@ bard --backend kokoro --language pt-BR   # first Brazilian-Portuguese voice
 
 ## Tray menu
 
+![alt text](https://raw.githubusercontent.com/perrette/bard/main/docs/app-tray-menu.png)
+
 The system tray icon exposes a `TTS` submenu with three sub-submenus:
 
 ```

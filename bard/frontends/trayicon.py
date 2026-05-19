@@ -108,6 +108,29 @@ def _format_voice_label(voice) -> str:
     return f"{voice.display or voice.id}{suffix}"
 
 
+_VENDOR_PREFIX = {
+    "openai": "OpenAI",
+    "kokoro": "Kokoro",
+    "elevenlabs": "ElevenLabs",
+    "piper": "Piper",
+}
+
+# Menu listing per backend — avoids instantiating non-active backends (which
+# may need network / API keys). The active backend's live ``list_models()``
+# is preferred when it returns more entries (e.g. ElevenLabs API additions).
+_STATIC_MODELS = {
+    "openai": ["gpt-4o-mini-tts", "tts-1", "tts-1-hd"],
+    "elevenlabs": ["eleven_turbo_v2_5", "eleven_flash_v2_5",
+                   "eleven_multilingual_v2", "eleven_v3"],
+    "kokoro": [],
+    "piper": [],
+}
+
+
+def _vendor_label(name: str) -> str:
+    return _VENDOR_PREFIX.get(name, name.capitalize())
+
+
 def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backend_kwargs=None, api_keys=None, **options):
 
     options = {
@@ -119,60 +142,70 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
     app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, api_keys=api_keys, error_callback=show_error_dialog)
     _app_ref[0] = app
 
-    def _make_backend_label(name):
-        locality = "local" if BACKENDS[name].is_local else "remote"
+    def _models_for(name):
+        """Models available for backend `name`. Prefers the live list from the
+        active backend; otherwise falls back to the static menu listing."""
+        if app.backend.name == name:
+            try:
+                live = list(app.backend.list_models())
+            except Exception:
+                live = []
+            if live:
+                return live
+        return list(_STATIC_MODELS.get(name, []))
 
-        def _label(item):
-            ok, reason = probe_backend(name)
-            if not ok:
-                return f"{name} (unavailable: {reason})"
-            return f"{name} ({locality})"
-
-        return _label
-
-    def _make_backend_action(name):
+    def _make_set_backend_model(name, model=None):
         def _cb(icon, item):
             ok, reason = probe_backend(name)
             if not ok:
                 app.logger.warning(f"Backend {name!r} unavailable: {reason}")
                 return
-            app.switch_backend(name)
+            if app.backend.name != name:
+                if not app.switch_backend(name):
+                    return
+            if model is not None:
+                app.set_model(model)
             icon.update_menu()
 
         return _cb
 
-    def _make_backend_checked(name):
-        return lambda item: app.backend.name == name
+    def _make_active_check(name, model=None):
+        if model is None:
+            return lambda item: app.backend.name == name
+        return lambda item: (app.backend.name == name
+                             and getattr(app.backend, "model", None) == model)
 
-    def _backend_items():
-        return tuple(
-            Item(
-                _make_backend_label(name),
-                _make_backend_action(name),
-                checked=_make_backend_checked(name),
-                radio=True,
+    def _vendor_model_items(name):
+        def _items():
+            return tuple(
+                Item(m,
+                     _make_set_backend_model(name, m),
+                     checked=_make_active_check(name, m),
+                     radio=True)
+                for m in _models_for(name)
             )
-            for name in available_backends()
-        )
-
-    def _make_model_action(m):
-        def _cb(icon, item):
-            app.set_model(m)
-            icon.update_menu()
-
-        return _cb
-
-    def _make_model_checked(m):
-        return lambda item: app.backend.model == m
+        return _items
 
     def _model_items():
-        return tuple(
-            Item(m, _make_model_action(m), checked=_make_model_checked(m), radio=True)
-            for m in app.backend.list_models()
-        )
-
-    def _model_visible(item):
-        return bool(app.backend.list_models())
+        items = []
+        for name in available_backends():
+            vendor = _vendor_label(name)
+            locality = "local" if BACKENDS[name].is_local else "remote"
+            base_label = f"{vendor} ({locality})"
+            ok, reason = probe_backend(name)
+            if not ok:
+                items.append(Item(f"{base_label} — unavailable: {reason}",
+                                  lambda icon, item: None,
+                                  enabled=False))
+                continue
+            if _models_for(name):
+                items.append(Item(base_label, Menu(_vendor_model_items(name))))
+            else:
+                items.append(Item(base_label,
+                                  _make_set_backend_model(name),
+                                  checked=_make_active_check(name),
+                                  radio=True))
+        return tuple(items)
 
     def _make_voice_action(vid):
         def _cb(icon, item):
@@ -207,9 +240,13 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
             out.append(Item(label, Menu(*inner)))
         return tuple(out)
 
-    tts_menu = Item('TTS', Menu(
-        Item('Backend', Menu(_backend_items)),
-        Item('Model', Menu(_model_items), visible=_model_visible),
+    def _tts_label(item):
+        vendor = _vendor_label(app.backend.name)
+        model = getattr(app.backend, "model", None)
+        return f"{vendor} {model}" if model else vendor
+
+    tts_menu = Item(_tts_label, Menu(
+        Item('Model', Menu(_model_items)),
         Item('Voice', Menu(_voice_items)),
     ))
 
