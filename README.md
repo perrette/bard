@@ -50,7 +50,7 @@ bard
 ```
 which defaults to:
 ```bash
-bard --backend openai --voice alloy --model tts-1
+bard --backend openai --voice alloy --model gpt-4o-mini-tts
 ```
 (this assumes the environment variable `OPENAI_API_KEY` is defined)
 
@@ -70,8 +70,9 @@ bard --pdf-file /path/to/document.pdf  # careful if you pay for it... (the full 
 bard --audio-file /path/to/audio.mp3 # no actual request, only useful for testing the audio player
 ```
 The above command will still launch the system tray icon, and so provide access to the audio player's (basic) controls.
-There is also a terminal version via the `--no-tray` parameter, with the same elementary controls as in the system tray.
-And for a one-off execution of the program without controls, use `--no-prompt`.
+There is also a terminal version via the `--no-tray` parameter that renders a keyboard-driven playback dashboard
+(`[space]` play/pause, `[←→]` ±jump, `[↑↓]` track, `[del]` delete, `[q]` menu).
+For a one-off execution of the program without any controls, use `--no-prompt`.
 
 The clipboard parsing capabilities are elaborate enough so that it can detect an URL, a file path or common HTML markup.
 If a file path is detected, the extension is checked for `.html`-ish and `.pdf`, and the data is extracted accordingly.
@@ -163,9 +164,22 @@ bard --list-backends
 # List voice IDs for the selected backend:
 bard --backend openai --list-voices
 
-# Full metadata table (id / language / gender / model):
-bard --backend openai --list-voices --verbose
+# Full metadata table (id / language / gender / model), grouped by language:
+bard --backend kokoro --list-voices --verbose
 ```
+
+### Picking a voice by language
+
+Instead of remembering a voice id, you can let bard pick the first one
+matching a language tag. Useful with multilingual backends like Kokoro:
+
+```bash
+bard --backend kokoro --language fr      # first French voice
+bard --backend kokoro --language pt-BR   # first Brazilian-Portuguese voice
+```
+
+`--language` is ignored when `--voice` is also set. The tray and terminal
+`Voice` submenus also group entries by language for easier browsing.
 
 ## Tray menu
 
@@ -177,14 +191,16 @@ TTS ▸
              ○ elevenlabs  (remote)   ← greyed if API key absent
              ○ kokoro      (local)    ← greyed if not installed
              ○ piper       (local)    ← greyed if model file absent
-  Model   ▸  ● tts-1
+  Model   ▸  ● gpt-4o-mini-tts
+             ○ tts-1
              ○ tts-1-hd
-             ○ gpt-4o-mini-tts
-  Voice   ▸  🇺🇸 alloy
-             🇺🇸 echo (M)
-             🇺🇸 nova (F)
+  Voice   ▸  ● alloy
+             ○ echo (M)
+             ○ nova (F)
              ...
 ```
+
+For multilingual backends (Kokoro, Piper, ElevenLabs) the `Voice` submenu groups voices by language with a flag prefix on each group header, e.g. `🇺🇸 en (24)`, `🇫🇷 fr (3)`.
 
 Backend and voice can be switched at runtime without restarting. The `Options`
 submenu retains its non-TTS controls (auto-play, jump interval, etc.).
@@ -207,8 +223,9 @@ TODO: I want to add a functioning "Open with external reader" option. At the mom
 
 ## Android
 
-I was able to install bard on Android via the excellent [Termux](https://termux.dev) emulator. Not everything works: the tray system app does not work, the clipboard option only partially works (**only plain text is copied**). However I could obtain a decent workflow for one-off reading (no player controls) via:
+I was able to install bard on Android via the excellent [Termux](https://termux.dev) emulator. Not everything works: the tray system app does not work, the clipboard option only partially works (**only plain text is copied**). However I could obtain a decent workflow via:
 ```bash
 bard --no-tray --clipboard
 ```
+and using the external player when controls are needed (nice key-driven in-terminal space for pause etc)
 For paywalled articles, I ended up opening them in Firefox, acessing the Reading mode (excellent, though sometimes the icon is hidden in the URL bar), selecting all text, copying, and running the above command (for free articles just copy paste the URL). This requires the termux API `pkg install termux-api`.
