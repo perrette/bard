@@ -20,7 +20,7 @@ dependencies = [
     "tqdm",
     "pyperclip",
     "pystray",
-    "desktop-ai-core>=0.1.0",
+    "desktop-ai-core>=0.2.0",
 ]
 
 classifiers = [

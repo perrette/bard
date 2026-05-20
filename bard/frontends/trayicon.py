@@ -1,4 +1,5 @@
 import logging
+import signal
 import threading
 from pathlib import Path
 
@@ -8,7 +9,7 @@ from bard.frontends.abstract import AbstractApp
 from bard.backends import BACKENDS, available_backends, probe_backend
 
 import bard_data
-from desktop_ai_core.frontends.tray import flag_for
+from desktop_ai_core.frontends.tray import flag_for, write_pidfile, register_signal_toggle
 
 _trayicon_logger = logging.getLogger(__name__)
 
@@ -289,5 +290,29 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
     view.update_progress = lambda p=None: _update_tooltip(view, p)
     view.update_state = lambda p=None: view.update_menu()
     app.set_audioplayer(view, player)
+
+    write_pidfile("bard")
+
+    def _on_read_signal():
+        # Heavy work (clipboard fetch + TTS rendering) — run off the signal
+        # handler so the main loop stays responsive.
+        threading.Thread(
+            target=app.callback_process_clipboard,
+            args=(view, None),
+            daemon=True,
+        ).start()
+
+    def _on_toggle_signal():
+        if app.audioplayer is None:
+            return
+        if app.audioplayer.is_playing:
+            app.callback_pause(view, None)
+        else:
+            app.callback_play(view, None)
+
+    if hasattr(signal, "SIGUSR1"):
+        register_signal_toggle(signal.SIGUSR1, _on_read_signal)
+    if hasattr(signal, "SIGUSR2"):
+        register_signal_toggle(signal.SIGUSR2, _on_toggle_signal)
 
     return view
