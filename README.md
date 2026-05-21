@@ -36,10 +36,12 @@ You can also install individual backend extras:
 
 On GNOME desktop you can subsequently run:
 ```bash
-bard-install [...] --openai-api-key $OPENAI_API_KEY
+bard-install [...]
 ```
 to produce a `.desktop` file for GNOME's quick-launch
-(the `[...]` indicates any argument that `bard` takes)
+(the `[...]` indicates any argument that `bard` takes).
+API keys are read from the environment (`OPENAI_API_KEY`, `ELEVENLABS_API_KEY`)
+and inherited by the launched process.
 
 ## Usage
 
@@ -72,7 +74,22 @@ bard --audio-file /path/to/audio.mp3 # no actual request, only useful for testin
 The above command will still launch the system tray icon, and so provide access to the audio player's (basic) controls.
 There is also a terminal version via the `--no-tray` parameter that renders a keyboard-driven playback dashboard
 (`[space]` play/pause, `[←→]` ±jump, `[↑↓]` track, `[del]` delete, `[q]` menu).
-For a one-off execution of the program without any controls, use `--no-prompt`.
+For a one-off execution of the program without any controls, use `--no-interactive`
+(the older `--no-prompt` is kept as a deprecated alias).
+
+### Batch render to a file
+
+To render text to an audio file without launching the player, pass `-o/--output-file`:
+
+```bash
+bard --text "Hello world" -o hello.mp3       # silent, just writes the file
+bard --pdf-file paper.pdf -o paper.wav       # PDF → WAV, no playback
+bard --text "Hello" -o hello.mp3 --play      # write the file AND play it
+```
+
+With `-o` no tray icon or terminal UI is launched: bard synthesises the text,
+writes the concatenated audio to the given path, and exits. The output format
+is inferred from the file extension when `--output-format` isn't given.
 
 The clipboard parsing capabilities are elaborate enough so that it can detect an URL, a file path or common HTML markup.
 If a file path is detected, the extension is checked for `.html`-ish and `.pdf`, and the data is extracted accordingly.
@@ -118,8 +135,8 @@ Bard supports four TTS backends. Use `--backend <name>` to select one at startup
 
 | Backend | `--backend` value | Type | Notes |
 |---------|------------------|------|-------|
-| OpenAI TTS | `openai` | remote | requires `OPENAI_API_KEY` (or `--openai-api-key`) |
-| ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` (or `--elevenlabs-api-key`) |
+| OpenAI TTS | `openai` | remote | requires `OPENAI_API_KEY` |
+| ElevenLabs | `elevenlabs` | remote | requires `ELEVENLABS_API_KEY` |
 | Kokoro | `kokoro` | local | free, offline, multilingual (54 voices, 9 languages) |
 | Piper | `piper` | local | free, offline, multilingual |
 

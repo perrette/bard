@@ -132,7 +132,7 @@ def _vendor_label(name: str) -> str:
     return _VENDOR_PREFIX.get(name, name.capitalize())
 
 
-def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backend_kwargs=None, api_keys=None, **options):
+def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backend_kwargs=None, **options):
 
     options = {
         "jump_back": jump_back,
@@ -140,7 +140,7 @@ def create_app(backend, player, models=[], jump_back=15, jump_forward=15, backen
         **options,
     }
 
-    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, api_keys=api_keys, error_callback=show_error_dialog)
+    app = AbstractApp(backend, player, options, models=models, backend_kwargs=backend_kwargs, error_callback=show_error_dialog)
     _app_ref[0] = app
 
     def _models_for(name):

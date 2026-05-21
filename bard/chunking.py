@@ -1,6 +1,8 @@
 import os
 import re
 import json
+import shutil
+import logging
 import hashlib
 import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -8,6 +10,8 @@ from pathlib import Path
 from typing import Iterator
 
 from bard import audiocache
+
+logger = logging.getLogger(__name__)
 
 
 def _max_concurrency() -> int:
@@ -102,3 +106,27 @@ def render_chunks(backend, text: str, chunk_size: int, cache_dir) -> Iterator[Pa
             }
             manifest_path = cache_dir / f"manifest_{timestamp}_{backend.name}_{voice}.json"
             manifest_path.write_text(json.dumps(manifest, indent=2))
+
+
+def render_to_file(backend, text: str, chunk_size: int, output_path, cache_dir) -> str:
+    """Render `text` through `backend` and write the concatenated audio to
+    `output_path`. Returns the path written.
+
+    Byte-concat: same-codec mp3 chunks (and most container formats this
+    project produces -- opus/flac/aac/wav) tolerate stream concatenation.
+    """
+    output_path = str(output_path)
+    sources = list(render_chunks(backend, text, chunk_size, cache_dir))
+    ext = os.path.splitext(output_path)[1].lower()
+    if ext and ext.lstrip(".") != backend.output_format.lower():
+        logger.warning(
+            f"--output-file extension {ext!r} differs from backend output_format "
+            f"{backend.output_format!r}; the file will contain {backend.output_format} data."
+        )
+    out_dir = os.path.dirname(output_path) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    with open(output_path, "wb") as out:
+        for f in sources:
+            with open(f, "rb") as fp:
+                shutil.copyfileobj(fp, out)
+    return output_path

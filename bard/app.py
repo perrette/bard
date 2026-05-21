@@ -1,33 +1,49 @@
+import os
 import sys
+import argparse
 
 from bard.backends import get_backend, available_backends, probe_backend, BACKENDS
 from bard.audio import AudioPlayer
-from bard.chunking import render_chunks
+from bard.chunking import render_chunks, render_to_file
 from bard.cache import get_resume_files
 from bard.util import clean_cache, logger, CACHE_DIR
 from bard.input import read_text_from_pdf, preprocess_input_text, get_text_from_clipboard
 
+
+class _NoInteractiveAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=0, **kwargs):
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string == "--no-prompt":
+            print("warning: --no-prompt is deprecated; use --no-interactive instead", file=sys.stderr)
+        setattr(namespace, self.dest, False)
+
+
 def main():
-    import argparse
     parser = argparse.ArgumentParser()
 
-    group = parser.add_argument_group("API Backend")
+    group = parser.add_argument_group("Backend")
     group.add_argument("--voice", default=None, help="Voice to use")
     group.add_argument("--language", default=None, help="Pick the first voice for the given language tag (e.g. 'fr' or 'fr-FR'). Ignored if --voice is also set.")
     group.add_argument("--model", default=None, help="Model to use")
-    group.add_argument("--output-format", default="mp3", help="Output format")
-    group.add_argument("--openai-api-key", default=None, help="OpenAI API key (alternative to OPENAI_API_KEY env var)")
-    group.add_argument("--elevenlabs-api-key", default=None, help="ElevenLabs API key (alternative to ELEVENLABS_API_KEY env var)")
+    group.add_argument("--output-format", default=None, help="Output format (default: mp3, or inferred from --output-file extension)")
     group.add_argument("--backend", default="openai", help="Backend to use")
     group.add_argument("--chunk-size", default=500, type=int, help="Max number of characters sent in one request")
     group.add_argument("--list-voices", action="store_true", help="List available voices for the selected backend and exit")
     group.add_argument("--verbose", action="store_true", help="With --list-voices: show language/gender/model table")
     group.add_argument("--list-backends", action="store_true", help="List registered backends with availability and exit")
 
+    group = parser.add_argument_group("Output")
+    group.add_argument("-o", "--output-file", default=None, help="Write the rendered audio to this file and exit. Implies headless (no tray, no terminal UI) and silent unless --play is also given.")
+    group.add_argument("--play", action="store_true", help="With --output-file, also play the audio after writing it.")
+
     group = parser.add_argument_group("Frontend")
     group.add_argument("--frontend", choices=["tray", "terminal"], default="tray", help="Frontend to use")
     group.add_argument("--no-tray", action="store_const", dest="frontend", const="terminal", help="Alias for `--frontend terminal`")
-    group.add_argument("--no-prompt", action="store_true", help="No prompt. Also assumes `--frontend terminal`")
+    group.add_argument("--no-interactive", "--no-prompt", dest="interactive", default=True,
+                       action=_NoInteractiveAction,
+                       help="With --frontend terminal, skip the interactive menu and play immediately. (--no-prompt is a deprecated alias.)")
 
     group = parser.add_argument_group("Player")
     group.add_argument("--jump-back", type=int, default=15, help="Jump back time in seconds")
@@ -73,19 +89,17 @@ def main():
                 print(f"    install: {cls.install_hint}")
         return 0
 
-    api_keys = {
-        "openai": o.openai_api_key,
-        "elevenlabs": o.elevenlabs_api_key,
-    }
+    if o.output_format is None:
+        if o.output_file:
+            ext = os.path.splitext(o.output_file)[1].lstrip(".").lower()
+            o.output_format = ext or "mp3"
+        else:
+            o.output_format = "mp3"
 
     backend_kwargs = {
         "output_format": o.output_format,
         "max_length": o.chunk_size,
     }
-
-    init_kwargs = dict(backend_kwargs)
-    if api_keys.get(o.backend):
-        init_kwargs["api_key"] = api_keys[o.backend]
 
     voice = o.voice
     if o.language and not voice:
@@ -104,14 +118,14 @@ def main():
             picked = None
         if picked is None:
             # Fall back: instantiate and search the live list.
-            tmp = get_backend(o.backend, voice=None, model=o.model, **init_kwargs)
+            tmp = get_backend(o.backend, voice=None, model=o.model, **backend_kwargs)
             picked = find_first_for_language(tmp.list_voices_meta(), o.language)
         if picked is None:
             print(f"No voice for language {o.language!r} in backend {o.backend!r}", file=sys.stderr)
             return 2
         voice = picked.id
 
-    backend = get_backend(o.backend, voice=voice, model=o.model, **init_kwargs)
+    backend = get_backend(o.backend, voice=voice, model=o.model, **backend_kwargs)
 
     if o.list_voices:
         from bard.voices import group_by_language
@@ -161,6 +175,24 @@ def main():
     elif o.resume:
         o.audio_file = get_resume_files()
 
+    if o.output_file:
+        if o.audio_file:
+            parser.error("--output-file does not support --audio-file input (use a file copy instead).")
+        if not o.text:
+            parser.error("--output-file requires text input (--text, --text-file, --pdf-file, --url, --html-file, --clipboard, or --clipboard-text).")
+        out_path = render_to_file(backend, o.text, o.chunk_size, o.output_file, cache_dir=CACHE_DIR)
+        logger.info(f"Wrote audio to {out_path}")
+        if o.play:
+            player = AudioPlayer.from_file(out_path)
+            try:
+                player.play()
+                player.wait()
+            finally:
+                player.stop()
+        if o.clean_cache_on_exit:
+            clean_cache()
+        return 0
+
     if o.audio_file:
         player = AudioPlayer.from_files(o.audio_file)
 
@@ -170,7 +202,7 @@ def main():
     else:
         player = None
 
-    if o.no_prompt:
+    if not o.interactive:
         if player is None:
             parser.error("No files or text provided to play. Exiting...")
             sys.exit(1)
@@ -210,7 +242,7 @@ def main():
     else:
         from bard.frontends.terminal import create_app
 
-    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, backend_kwargs=backend_kwargs, api_keys=api_keys, **options)
+    app = create_app(backend, player, jump_back=o.jump_back, jump_forward=o.jump_forward, backend_kwargs=backend_kwargs, **options)
 
     if player is not None:
         player.play()

@@ -13,7 +13,7 @@ def is_running_in_terminal(view):
 
 class AbstractApp(AbstractFrontendApp):
 
-    def __init__(self, backend, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None, backend_kwargs=None, api_keys=None, error_callback: Callable[[str, str], None] | None = None):
+    def __init__(self, backend, audioplayer, params=None, models=None, view=None, logger=logger, track_index=None, backend_kwargs=None, error_callback: Callable[[str, str], None] | None = None):
         super().__init__(params=params, view=view, logger=logger, error_callback=error_callback)
         self.backend = backend
         self.audioplayer = audioplayer
@@ -21,14 +21,10 @@ class AbstractApp(AbstractFrontendApp):
         self.track_index = track_index
         self.is_externally_open = False
         self.backend_kwargs = backend_kwargs or {}
-        self.api_keys = api_keys or {}
 
     def switch_backend(self, name: str) -> bool:
         try:
-            kwargs = dict(self.backend_kwargs)
-            if self.api_keys.get(name):
-                kwargs["api_key"] = self.api_keys[name]
-            new_backend = get_backend(name, **kwargs)
+            new_backend = get_backend(name, **self.backend_kwargs)
         except Exception as e:
             self.logger.error(f"Failed to switch backend to {name!r}: {e}")
             return False
