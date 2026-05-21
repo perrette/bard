@@ -57,7 +57,9 @@ def main():
 
     if o.refresh_cache:
         from bard.backends import diskcache
+        from bard import audiocache
         diskcache.clear_all()
+        audiocache.clear_all()
         return 0
 
     if o.list_backends:

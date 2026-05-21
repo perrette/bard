@@ -7,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Iterator
 
+from bard import audiocache
+
 
 def _max_concurrency() -> int:
     try:
@@ -51,6 +53,19 @@ def split_text_into_chunks(text: str, chunk_size: int = 500) -> list[str]:
     return chunks
 
 
+def _synthesize_with_cache(backend, text: str, out_path: Path) -> Path:
+    """Wrap backend.synthesize with a content-addressed cache for remote backends."""
+    if getattr(backend, "is_local", False):
+        return backend.synthesize(text, out_path)
+    key = audiocache.request_fingerprint(backend, text)
+    ext = backend.output_format
+    if audiocache.try_load(backend.name, key, ext, out_path):
+        return out_path
+    backend.synthesize(text, out_path)
+    audiocache.store(backend.name, key, ext, out_path)
+    return out_path
+
+
 def render_chunks(backend, text: str, chunk_size: int, cache_dir) -> Iterator[Path]:
     # Streaming-capable backends still produce one complete file per chunk here;
     # intra-chunk byte streaming (synthesize_stream) is a separate code path.
@@ -68,7 +83,7 @@ def render_chunks(backend, text: str, chunk_size: int, cache_dir) -> Iterator[Pa
     try:
         with ThreadPoolExecutor(max_workers=_max_concurrency()) as executor:
             futures = [
-                executor.submit(backend.synthesize, chunk, out_path)
+                executor.submit(_synthesize_with_cache, backend, chunk, out_path)
                 for chunk, out_path in zip(chunks, out_paths)
             ]
             for future in futures:
