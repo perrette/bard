@@ -1,0 +1,77 @@
+site_name: Bard
+site_description: A text-to-speech client that integrates on the desktop
+site_url: https://perrette.github.io/bard/
+repo_url: https://github.com/perrette/bard
+repo_name: perrette/bard
+edit_uri: edit/main/
+
+# All narrative content already lives as Markdown in docs/ and README.md.
+# Nothing is duplicated here: the homepage pulls the README in via the
+# include-markdown plugin, and every other page is an existing docs/*.md file.
+docs_dir: docs
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+  - include-markdown
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: installation.md
+      - Quickstart: quickstart.md
+  - Guides:
+      - Input sources: input-sources.md
+      - Batch render to a file: batch-render.md
+      - Backends & voices: backends.md
+      - Tray menu: tray-menu.md
+      - Global keyboard shortcut: keyboard-shortcut.md
+      - Fine-tuning: fine-tuning.md
+      - Player: player.md
+      - Android: android.md
