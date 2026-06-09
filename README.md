@@ -77,6 +77,21 @@ bard --pdf-file /path/to/document.pdf
 See the [quickstart](https://perrette.github.io/bard/quickstart/) and
 [input sources](https://perrette.github.io/bard/input-sources/) pages for more.
 
+## From the same author
+
+A small toolkit for a Markdown-first scientific workflow.
+
+**Scientific writing & data**
+
+- [**texmark**](https://perrette.github.io/texmark/) — write scientific articles in Markdown and submit them to any journal (Markdown → LaTeX/PDF).
+- [**papers**](https://perrette.github.io/papers/) — command-line BibTeX bibliography and PDF library manager.
+- [**datamanifest**](https://perrette.github.io/datamanifest/) — declarative, reproducible dataset management. *(See also the [datamanifest.toml](https://perrette.github.io/datamanifest.toml/) format spec and the [DataManifest.jl](https://awi-esc.github.io/DataManifest.jl/) Julia port.)*
+
+**Voice helpers** — handy for dictating and proofreading drafts by ear
+
+- [**scribe**](https://perrette.github.io/scribe/) — speech-to-text dictation (Whisper).
+- [**bard**](https://perrette.github.io/bard/) — text-to-speech reader (Kokoro / Piper).
+
 ## Acknowledgements
 
 The player was devised in conversation with Mistral's Le Chat and OpenAI's
