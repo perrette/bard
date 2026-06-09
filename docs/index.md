@@ -9,8 +9,8 @@
 
 # Bard
 
-Bard is a text-to-speech client that integrates on the desktop — turn clipboard
-text, web pages, or PDFs into speech with a system-tray player.
+Bard is a text-to-speech client that integrates on the desktop. It reads plain
+text, clipboard content, web pages, or PDFs aloud through a system-tray player.
 
 {%
   include-markdown "../README.md"
@@ -43,7 +43,7 @@ bard
 
 ## From the same author
 
-A small toolkit for a Markdown-first scientific workflow.
+A few related tools I maintain, useful in a Markdown-based scientific workflow.
 
 **Scientific writing & data**
 

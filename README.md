@@ -8,15 +8,15 @@
 Bard is a text-to-speech client that integrates on the desktop.
 
 <!-- intro-start -->
-- **Read anything aloud.** Feed bard plain text, the clipboard, a URL, an HTML
+- **Multiple input sources.** Feed bard plain text, the clipboard, a URL, an HTML
   file, or a PDF — it extracts the readable content (with
-  [readability](https://pypi.org/project/readability-lxml)) and speaks it. Handy
-  for getting through paywalled articles via "View Page Source".
+  [readability](https://pypi.org/project/readability-lxml)) and speaks it. Useful
+  for reading paywalled articles via "View Page Source".
 - **Four TTS backends.** OpenAI and ElevenLabs (remote, API key) plus Kokoro and
   Piper (local, free, offline, multilingual). Switch backend, model, and voice
-  at runtime from the tray menu — no restart.
-- **Desktop-native player.** A system-tray icon with playback controls, or a
-  keyboard-driven terminal dashboard with `--no-tray`. Bind a global shortcut to
+  at runtime from the tray menu without restarting.
+- **Desktop player.** A system-tray icon with playback controls, or a
+  keyboard-driven terminal dashboard with `--no-tray`. A global shortcut can
   read the clipboard from anywhere (works on Wayland too).
 - **Batch or interactive.** Pass `-o file.mp3` to synthesise straight to an audio
   file and exit, or run interactively and drive playback from the tray.
@@ -79,7 +79,7 @@ See the [quickstart](https://perrette.github.io/bard/quickstart/) and
 
 ## From the same author
 
-A small toolkit for a Markdown-first scientific workflow.
+A few related tools I maintain, useful in a Markdown-based scientific workflow.
 
 **Scientific writing & data**
 
